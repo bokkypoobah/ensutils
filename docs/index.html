@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>ensutils</title>
+    <title>ensUtils</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="description" content="ensutils (c) Bok Consulting Pty Ltd 2023" />
+    <meta name="description" content="ensUtils (c) Bok Consulting Pty Ltd 2023" />
     <meta name="author" content="BokkyPooBah" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@BokkyPooBah" />
@@ -52,13 +52,13 @@
         <b-navbar toggleable="sm" variant="light" class="mx-1 my-0 p-0">
           <b-navbar-brand to="/" variant="primary">
             <b-avatar rounded variant="light" size="3.0rem" src="images/punk_3636.png" v-b-popover.hover.bottom="'gm'" class="ml-0"></b-avatar>
-            <em v-b-popover.hover.bottom="'gm gm gm'">ensutils</em>
+            <em v-b-popover.hover.bottom="'gm gm gm'">ensUtils</em>
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
-            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings()" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'View Punks'">Punks</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings()" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'View Activity'">Activity</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings()" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'View Owners'">Owners</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings()" :active="settings.tabIndex == 3" active-class="active" v-b-popover.hover="'Configure Settings'">Config</b-nav-item> -->
+            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings()" :active="settings.tabIndex == 1000" active-class="active" v-b-popover.hover="'View Punks'">Punks</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings()" :active="settings.tabIndex == 1001" active-class="active" v-b-popover.hover="'View Activity'">Activity</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings()" :active="settings.tabIndex == 1002" active-class="active" v-b-popover.hover="'View Owners'">Owners</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings()" :active="settings.tabIndex == 1003" active-class="active" v-b-popover.hover="'Configure Settings'">Config</b-nav-item> -->
             <b-avatar v-if="coinbase && coinbase != ensOrAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + ensOrAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar>
             <b-button size="sm" variant="outline-primary" class="ml-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? ensOrAddress(coinbase, 16) : 'Connect' }}</b-button>
           </b-navbar-nav>
@@ -282,16 +282,16 @@
             <!-- :TOOLBAR -->
             <b-card-text v-if="coinbase" class="m-0 p-0">
               <div class="d-flex flex-wrap m-0 p-0">
-                <div class="mt-0">
+                <div v-if="false" class="mt-0">
                   <b-button size="sm" :pressed.sync="settings.showFilter" @click="saveSettings" variant="link" v-b-popover.hover.bottom="'Show filter'"><span v-if="settings.showFilter"><b-icon-layout-sidebar-inset shift-v="+1" font-scale="1.0"></b-icon-layout-sidebar-inset></span><span v-else><b-icon-layout-sidebar shift-v="+1" font-scale="1.0"></b-icon-layout-sidebar></span></b-button>
                 </div>
-                <div class="mt-0 pr-1" style="max-width: 11.0rem;">
+                <div v-if="false" class="mt-0 pr-1" style="max-width: 11.0rem;">
                   <b-form-input type="text" size="sm" v-model.trim="settings.filterByIds" @change="saveSettings" debounce="600" v-b-popover.hover.bottom="'Filter by punk id(s) or first 3 (or more) characters of attribute names, e.g., `1 5-10 alien ape`. Replace spaces with `-`, e.g., `male-4`, `clown-nose` or `3d-gl`'" placeholder="🔍 id1 id2-id3 attrib1 ..."></b-form-input>
                 </div>
-                <div class="mt-0 pr-1" style="max-width: 11.0rem;">
+                <div v-if="false" class="mt-0 pr-1" style="max-width: 11.0rem;">
                   <b-form-input type="text" size="sm" v-model.trim="settings.filterByOwners" @change="saveSettings" debounce="600" v-b-popover.hover.bottom="'Filter owner addresses and names by space separated regex. Some custom names `larvalabs`, `yugalabs`, `dead:`'" placeholder="🔍 0x12ab... name1 ..."></b-form-input>
                 </div>
-                <div v-if="settings.tabIndex == 1" class="mt-0 pr-1">
+                <div v-if="settings.tabIndex == 1001" class="mt-0 pr-1">
                   <b-form-checkbox-group size="sm" @input="saveSettings" v-model="settings.selectedContracts" :options="contractOptions" buttons button-variant="outline-primary" v-b-popover.hover.bottom="'Filter by [Wrapped] CryptoPunks V1 & V2'"></b-form-checkbox-group>
                 </div>
                 <div v-if="Object.keys(settings.filters).length > 0 || settings.filterByIds || settings.filterByOwners" class="mt-0 pr-1">
@@ -304,10 +304,10 @@
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
-                <div v-if="!sync.section" class="mt-0 pr-1">
+                <div v-if="false && !sync.section" class="mt-0 pr-1">
                   <b-button size="sm" @click="syncIt(false)" variant="primary" v-b-popover.hover.bottom="'Sync CryptoPunks Event Logs. This will take ~10 minutes initially, and < 1 minute subsequently'">Sync</b-button>
                 </div>
-                <div v-if="!sync.section" class="mt-0 pr-1">
+                <div v-if="false && !sync.section" class="mt-0 pr-1">
                   <b-button size="sm" @click="syncIt(true)" variant="outline-primary" v-b-popover.hover.bottom="'This will do dev things'">Dev</b-button>
                 </div>
                 <div v-if="sync.section" class="mt-1 p-0" style="width: 300px;">
@@ -322,43 +322,43 @@
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
-                <div class="mt-0 pl-1">
+                <div v-if="false" class="mt-0 pl-1">
                   <b-button size="sm" :pressed.sync="settings.showInfo" @click="saveSettings" variant="link" v-b-popover.hover.bottom="'Show info'"><span v-if="settings.showInfo"><b-icon-info-circle-fill shift-v="+1" font-scale="1.0"></b-icon-info-circle-fill></span><span v-else><b-icon-info-circle shift-v="+1" font-scale="1.0"></b-icon-info-circle></span></b-button>
                 </div>
-                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1000" class="mt-0 pl-1">
                   <b-form-select size="sm" v-model="settings.punksTable.sortOption" @change="saveSettings" :options="punksSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                 </div>
-                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1001" class="mt-0 pl-1">
                   <b-form-select size="sm" v-model="settings.activityTable.sortOption" @change="saveSettings" :options="activitySortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                 </div>
-                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1002" class="mt-0 pl-1">
                   <b-form-select size="sm" v-model="settings.ownersTable.sortOption" @change="saveSettings" :options="ownersSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
                 </div>
-                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1000" class="mt-0 pl-1">
                   <font size="-2" v-b-popover.hover.bottom="'# tokens'">{{ filteredSortedPunks.length + '/' + punkAttributes.length }}</font>
                 </div>
-                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1001" class="mt-0 pl-1">
                   <font size="-2" v-b-popover.hover.bottom="'# events'">{{ filteredSortedActivity.length + '/' + Object.keys(txs).length }}</font>
                 </div>
-                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1002" class="mt-0 pl-1">
                   <font size="-2" v-b-popover.hover.bottom="'# owners'">{{ filteredSortedOwners.length + '/' + Object.keys(owners).length }}</font>
                 </div>
-                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1000" class="mt-0 pl-1">
                   <b-pagination size="sm" v-model="settings.punksTable.currentPage" @input="saveSettings" :total-rows="filteredSortedPunks.length" :per-page="settings.punksTable.pageSize" style="height: 0;"></b-pagination>
                 </div>
-                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1001" class="mt-0 pl-1">
                   <b-pagination size="sm" v-model="settings.activityTable.currentPage" @input="saveSettings" :total-rows="filteredSortedActivity.length" :per-page="settings.activityTable.pageSize" style="height: 0;"></b-pagination>
                 </div>
-                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1002" class="mt-0 pl-1">
                   <b-pagination size="sm" v-model="settings.ownersTable.currentPage" @input="saveSettings" :total-rows="filteredSortedOwners.length" :per-page="settings.ownersTable.pageSize" style="height: 0;"></b-pagination>
                 </div>
-                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1000" class="mt-0 pl-1">
                   <b-form-select size="sm" v-model="settings.punksTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
                 </div>
-                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1001" class="mt-0 pl-1">
                   <b-form-select size="sm" v-model="settings.activityTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
                 </div>
-                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 1002" class="mt-0 pl-1">
                   <b-form-select size="sm" v-model="settings.ownersTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
                 </div>
               </div>
@@ -402,60 +402,67 @@
                   <b-card v-if="settings.showInfo || coinbase == null" no-body class="my-1 p-1">
                     <b-card-body class="mt-1 p-1">
                       <h4>Welcome</h4>
-                      This dapp retrieves historical log events from the <b-link href="https://cryptopunks.app/" target="_blank">CryptoPunks</b-link> contracts on the Ethereum mainnet, collates the data, and provides an interface for users to query the data.
-                      This dapp currently takes about 10 minutes to retrieve the data initially, and about a minute to sync subsequently.
-                      <h5 class="mt-4">How This Works</h5>
+                      <!-- This dapp retrieves historical log events from the <b-link href="https://cryptopunks.app/" target="_blank">CryptoPunks</b-link> contracts on the Ethereum mainnet, collates the data, and provides an interface for users to query the data.
+                      This dapp currently takes about 10 minutes to retrieve the data initially, and about a minute to sync subsequently. -->
+                      <!-- <h5 class="mt-4">How This Works</h5>
                       <ul>
                         <li>Event logs are retrieved via your browser's web3 connection for the CryptoPunks <b-link href="https://etherscan.io/address/0x6Ba6f2207e343923BA692e5Cae646Fb0F566DB8D#code" target="_blank">V1</b-link> and <b-link href="https://etherscan.io/address/0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB#code" target="_blank">V2</b-link>, and Wrapped CryptoPunks <b-link href="https://etherscan.io/address/0x282BDD42f4eb70e7A9D9F40c8fEA0825B7f68C5D#code" target="_blank">V1</b-link> and <b-link href="https://etherscan.io/address/0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6#code" target="_blank">V2</b-link> contracts</li>
                         <li>Block timestamps are retrieved from the <b-link href="https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks" target="_blank">https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks</b-link> subgraph API endpoint</li>
                         <li>Exchange rates are retrieved from <b-link href="https://min-api.cryptocompare.com" target="_blank">https://min-api.cryptocompare.com</b-link>. Get your API key here and enter it in the Config page (some free initial queries without the API key)</li>
                         <li>The resulting data is collated and presented in this dapp</li>
-                      </ul>
-                      <h5 class="mt-3">Requirements</h5>
+                      </ul> -->
+                      <!-- <h5 class="mt-3">Requirements</h5>
                       <ul>
                         <li>This dapp runs in web3 enabled desktop browsers connected to the Ethereum mainnet</li>
-                      </ul>
-                      <h5 class="mt-3">References</h5>
+                      </ul> -->
+                      <!-- <h5 class="mt-3">References</h5>
                       <ul>
                         <li>Dapp: <b-link href="https://bokkypoobah.github.io/CryptoPunksData/" target="_blank">https://bokkypoobah.github.io/CryptoPunksData/</b-link></li>
                         <li>GitHub: <b-link href="https://github.com/bokkypoobah/CryptoPunksData" target="_blank">https://github.com/bokkypoobah/CryptoPunksData</b-link></li>
                         <li>Main Dapp Source Code: <b-link href="https://github.com/bokkypoobah/CryptoPunksData/blob/master/docs/index.html" target="_blank">https://github.com/bokkypoobah/CryptoPunksData/blob/master/docs/index.html</b-link></li>
-                      </ul>
-                      <h5 class="mt-3">Running Locally</h5>
+                      </ul> -->
+                      <!-- <h5 class="mt-3">Running Locally</h5>
                       <ul>
                         <li>In a folder on your computer, <b>git clone <b-link href="https://github.com/bokkypoobah/CryptoPunksData" target="_blank">https://github.com/bokkypoobah/CryptoPunksData</b-link></b></li>
                         <li>Run a tool like <b-link href="https://www.npmjs.com/package/anywhere" target="_blank">anywhere</b-link> in the <b>./docs</b> subdirectory of the folder created above</li>
-                      </ul>
-                      <h5 class="mt-3">This Dapp Design</h5>
+                      </ul> -->
+                      <!-- <h5 class="mt-3">This Dapp Design</h5>
                       <ul>
                         <li>Addresses and transaction hashes are stored as integer indices into lookup tables to save on memory and computations</li>
                         <li>Arrays are used instead of Maps in some sections to save on memory and computations</li>
                         <li><b-link href="https://github.com/bokkypoobah/CryptoPunksData/tree/master/docs/images/punks" target="_blank">10k 24x24 punk images</b-link> were split from the original <b-link href="https://raw.githubusercontent.com/larvalabs/cryptopunks/master/punks.png" target="_blank">punks.png</b-link> using the <b-link href="https://github.com/bokkypoobah/aenus/blob/main/scripts/01_splitImage.js" target="_blank">01_splitImage.js</b-link> script</li>
                         <li><b-link href="https://raw.githubusercontent.com/bokkypoobah/CryptoPunksData/master/docs/punkAttributes.js" target="_blank">10k punk attributes</b-link> were extracted from the <i>CryptopunksData</i> contract at <b-link href="https://etherscan.io/address/0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2#code" target="_blank">0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2</b-link> using the <b-link href="https://github.com/bokkypoobah/aenus/blob/main/scripts/02_scrapeCryptoPunksAttributes.js" target="_blank">02_scrapeCryptoPunksAttributes.js</b-link> script</li>
-                      </ul>
-                      <h5 class="mt-3">Some Info</h5>
+                      </ul> -->
+                      <!-- <h5 class="mt-3">Some Info</h5>
                       <ul>
                         <li>Three v1s were claimed with invalid ids <b-link href="https://etherscan.io/tx/0x39d77a95637640b6291bea0b015be4f6578c95f9a57af6a9399dabd70b56d50c" target="_blank">9845944</b-link>, <b-link href="https://etherscan.io/tx/0xdc37a82d43eb253077abd4618683efea615fc8573bfc669568fab04098ab24b1" target="_blank">76623</b-link> and <b-link href="https://etherscan.io/tx/0x7da83b5002251ca83537aef8833f443263a9109a1ccca502b0b03a0529813aa2" target="_blank">0xffff...ffff</b-link>. This resulted in 3 unassigned v1s 1416, 1838 and 1841</li>
                         <li>LarvaLabs airdropped these 3 unassigned v2s <b-link href="https://cryptopunks.app/cryptopunks/details/1416" target="_blank">1416</b-link>, <b-link href="https://cryptopunks.app/cryptopunks/details/1838" target="_blank">1838</b-link> and <b-link href="https://cryptopunks.app/cryptopunks/details/1841" target="_blank">1841</b-link> to <b-link href="https://etherscan.io/address/0x5b098b00621eda6a96b7a476220661ad265f083f" target="_blank">0x5b098b...</b-link></li>
                         <li>Two v2s <b-link href="https://etherscan.io/tx/0xce9bdec865497ba6d3c7e26bdfac54d4270285361a0f65ff09f042997b318b38" target="_blank">2838</b-link> and <b-link href="https://etherscan.io/tx/0x2c7a8584e8c3d5c14232881f2e7aef4cbacfe1cb729b67b129f84b0384018330" target="_blank">5449</b-link> have been incorrectly transferred to the v2 CryptoPunk contract</li>
-                      </ul>
-                      <h5 class="mt-3">Troubleshooting</h5>
+                      </ul> -->
+                      <!-- <h5 class="mt-3">Troubleshooting</h5>
                       <ul>
                         <li>If this dapp is not receiving the latest Mainnet data, reset your MetaMask web3 connection using <b>Settings</b> -> <b>Advanced</b> -> <b>Clear activity and nonce data</b></li>
-                      </ul>
-                      <h5 class="mt-3">CryptoPunks History</h5>
+                      </ul> -->
+                      <!-- <h5 class="mt-3">CryptoPunks History</h5>
                       <ul>
                         <li>The v1 contract was deployed to <b-link href="https://etherscan.io/address/0x6Ba6f2207e343923BA692e5Cae646Fb0F566DB8D#code" target="_blank">0x6Ba6f2207e343923BA692e5Cae646Fb0F566DB8D</b-link> at Jun-09-2017 12:22:50 AM +UTC</li>
                         <li><b-link href="https://www.reddit.com/r/ethereum/comments/6g8cma/cryptopunks_an_experiment_in_digital_collectibles/" target="_blank">CryptoPunks: An experiment in digital collectibles on Ethereum</b-link> announced on Reddit at Jun-09-2017 01:19:08 AM UTC</li>
                         <li>Due to a <b-link href="https://twitter.com/cryptopunksnfts/status/876106428200738816" target="_blank">bug in v1 contract</b-link>, <b-link href="https://twitter.com/cryptopunksnfts/status/878353034194984961" target="_blank">v2 was deployed</b-link> to <b-link href="https://etherscan.io/address/0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB#code" target="_blank">0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB</b-link> at Jun-22-2017 07:40:00 PM +UTC</li>
                         <li>The ERC-721 wrapper for the v2 contract was deployed to <b-link href="https://etherscan.io/address/0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6#code" target="_blank">0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6</b-link> at Sep-08-2020 03:11:25 PM +UTC</li>
                         <li>The ERC-721 wrapper for the v1 contract was deployed to <b-link href="https://etherscan.io/address/0x282BDD42f4eb70e7A9D9F40c8fEA0825B7f68C5D#code" target="_blank">0x282BDD42f4eb70e7A9D9F40c8fEA0825B7f68C5D</b-link> at Jan-17-2022 10:15:07 AM +UTC</li>
-                      </ul>
+                      </ul> -->
+                    </b-card-body>
+                  </b-card>
+
+                  <b-card no-body class="my-1 p-1">
+                    <b-card-body class="mt-1 p-1">
+                      <h4>Do Something</h4>
+                      <b-link size="sm" @click="doSomething" variant="link" v-b-popover.hover.bottom="'Click to do something'">Do Something</b-link>
                     </b-card-body>
                   </b-card>
 
                   <!-- :PUNKS -->
-                  <b-table v-if="settings.tabIndex == 0 && !settings.showInfo" small fixed striped responsive hover :fields="punksFields" :items="pagedFilteredSortedPunks" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="settings.tabIndex == 1000 && !settings.showInfo" small fixed striped responsive hover :fields="punksFields" :items="pagedFilteredSortedPunks" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
                     <template #cell(punkId)="data">
                       <b-link @click="showModalPunk(data.item.punkId);" v-b-popover.hover.bottom="'Click for details'">
                         <b-badge pill variant="info">{{ data.item.punkId }}</b-badge>
@@ -503,7 +510,7 @@
                   </b-table>
 
                   <!-- :ACTIVITY -->
-                  <b-table v-if="settings.tabIndex == 1 && !settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="settings.tabIndex == 1001 && !settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
                     <template #head(timestamp)="data">
                       When
                     </template>
@@ -909,7 +916,7 @@
                   </b-table>
 
                   <!-- :OWNERS -->
-                  <b-table v-if="settings.tabIndex == 2 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="settings.tabIndex == 1002 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
                     <template #cell(number)="data">
                       {{ parseInt(data.index) + ((settings.ownersTable.currentPage - 1) * settings.ownersTable.pageSize) + 1 }}
                     </template>
@@ -961,7 +968,7 @@
                   </b-table>
 
                   <!-- :CONFIG -->
-                  <b-card v-if="settings.tabIndex == 3 && !settings.showInfo" no-body no-header bg-variant="light" class="mx-0 my-1 p-1">
+                  <b-card v-if="settings.tabIndex == 1003 && !settings.showInfo" no-body no-header bg-variant="light" class="mx-0 my-1 p-1">
                     <b-card-body class="m-1 ml-0 p-1">
                       <b-form-group label-cols-lg="2" label="API Settings" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
                         <b-form-group label="CryptoCompare API Key:" label-for="cryptocompare-apikey" label-size="sm" label-cols-sm="2" label-align-sm="right" description="This key is stored in your local browser storage and is sent with CryptoCompare API requests for historical ETH/{ccy} rates. If not supplied, imports from CryptoCompare may fail if you reach your free quota" class="mx-0 my-1 p-0">
@@ -1008,7 +1015,7 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div class="mt-0 pl-1 pr-1">
-              gm, and enjoy! <i>ensutils</i> &copy; Bok Consulting Pty Ltd 2023
+              gm, and enjoy! <i>ensUtils</i> &copy; Bok Consulting Pty Ltd 2023
             </div>
           </div>
         </b-card>
@@ -1057,7 +1064,7 @@
             },
             editAccounts: false,
             accounts: {},
-            version: 13,
+            version: 0,
           },
 
           sync: {
@@ -1719,9 +1726,9 @@
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const signer = provider.getSigner();
             this.coinbase = await signer.getAddress();
-            localStorage.cryptoPunksDataCoinbase = this.coinbase;
+            localStorage.ensUtilsCoinbase = this.coinbase;
             const network = await provider.getNetwork();
-            localStorage.cryptoPunksDataChainId = network.chainId;
+            localStorage.ensUtilsChainId = network.chainId;
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " syncIt - latestBlockNumber: " + latestBlockNumber + ", chainId: " + this.chainId);
@@ -2462,7 +2469,7 @@
           },
 
           saveSettings() {
-            localStorage.cryptoPunksDataSettings = JSON.stringify(this.settings);
+            localStorage.ensUtilsSettings = JSON.stringify(this.settings);
           },
           filterChanged(dataType, option) {
             if (!this.settings.filters[dataType]) {
@@ -2488,6 +2495,11 @@
           async processNewBlock(blockNumber) {
             console.log(moment().format("HH:mm:ss") + " processNewBlock #" + this.commify0(blockNumber) + ", latest #" + this.commify0(this.blockNumber) + " @ " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + " " + moment.unix(this.timestamp).fromNow());
           },
+
+          async doSomething() {
+            console.log(moment().format("HH:mm:ss") + " doSomething");
+          },
+
 
           async halt() {
             this.sync.halt = true;
@@ -2695,33 +2707,33 @@
           (async() => {
             await this.connectToWeb3();
           })();
-          if ('cryptoPunksDataChainId' in localStorage) {
-            this.chainId = localStorage.cryptoPunksDataChainId;
+          if ('ensUtilsChainId' in localStorage) {
+            this.chainId = localStorage.ensUtilsChainId;
           }
-          if ('cryptoPunksDataCoinbase' in localStorage) {
-            this.coinbase = localStorage.cryptoPunksDataCoinbase;
+          if ('ensUtilsCoinbase' in localStorage) {
+            this.coinbase = localStorage.ensUtilsCoinbase;
           }
-          if ('cryptoPunksDataSettings' in localStorage) {
-            const tempSettings = JSON.parse(localStorage.cryptoPunksDataSettings);
+          if ('ensUtilsSettings' in localStorage) {
+            const tempSettings = JSON.parse(localStorage.ensUtilsSettings);
             if ('version' in tempSettings && tempSettings.version == this.settings.version) {
               this.settings = tempSettings;
-              if (this.settings.punksTable.currentPage > 1) {
-                this.settings.punksTable.currentPage = 1;
-              }
-              if (this.settings.activityTable.currentPage > 1) {
-                this.settings.activityTable.currentPage = 1;
-              }
-              if (this.settings.ownersTable.currentPage > 1) {
-                this.settings.ownersTable.currentPage = 1;
-              }
+              // if (this.settings.punksTable.currentPage > 1) {
+              //   this.settings.punksTable.currentPage = 1;
+              // }
+              // if (this.settings.activityTable.currentPage > 1) {
+              //   this.settings.activityTable.currentPage = 1;
+              // }
+              // if (this.settings.ownersTable.currentPage > 1) {
+              //   this.settings.ownersTable.currentPage = 1;
+              // }
             }
           }
-          (async() => {
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-            await this.loadCurrentData(db);
-            db.close();
-          })();
+          // (async() => {
+          //   const db = new Dexie(this.db.name);
+          //   db.version(this.db.version).stores(this.db.schemaDefinition);
+          //   await this.loadCurrentData(db);
+          //   db.close();
+          // })();
           // (async() => {
           //   // TODO: TESTING
           //   await delay(4500);
