@@ -1,0 +1,2734 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>ensutils</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="ensutils (c) Bok Consulting Pty Ltd 2023" />
+    <meta name="author" content="BokkyPooBah" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@BokkyPooBah" />
+    <meta name="twitter:creator" content="@BokkyPooBah" />
+    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="css/bootstrap-vue.min.css"/>
+    <link type="text/css" rel="stylesheet" href="css/bootstrap-vue-icons.min.css"/>
+    <link type="text/css" rel="stylesheet" href="css/app.css" />
+    <script src="js/vue.js"></script>
+    <script src="js/bootstrap-vue.min.js"></script>
+    <script src="js/bootstrap-vue-icons.min.js"></script>
+    <script src="js/ethers-5.7.umd.min.js" type="application/javascript"></script>
+    <script src="js/moment.min.js"></script>
+    <script src="js/dexie.js"></script>
+    <script src="globals.js"></script>
+    <script src="customNames.js"></script>
+    <script src="deploymentData.js"></script>
+    <script src="punkAttributes.js"></script>
+    <script src="parsePunkTx.js"></script>
+    <script src="txInfo.js"></script>
+    <script src="txparser.js"></script>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="images/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="images/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="images/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="images/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="images/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="images/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="images/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="images/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+  </head>
+  <body>
+    <div id="app">
+      <b-container fluid class="m-0 p-0">
+        <b-navbar toggleable="sm" variant="light" class="mx-1 my-0 p-0">
+          <b-navbar-brand to="/" variant="primary">
+            <b-avatar rounded variant="light" size="3.0rem" src="images/punk_3636.png" v-b-popover.hover.bottom="'gm'" class="ml-0"></b-avatar>
+            <em v-b-popover.hover.bottom="'gm gm gm'">ensutils</em>
+          </b-navbar-brand>
+          <b-navbar-nav class="ml-auto">
+            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings()" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'View Punks'">Punks</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings()" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'View Activity'">Activity</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings()" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'View Owners'">Owners</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings()" :active="settings.tabIndex == 3" active-class="active" v-b-popover.hover="'Configure Settings'">Config</b-nav-item> -->
+            <b-avatar v-if="coinbase && coinbase != ensOrAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + ensOrAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar>
+            <b-button size="sm" variant="outline-primary" class="ml-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? ensOrAddress(coinbase, 16) : 'Connect' }}</b-button>
+          </b-navbar-nav>
+        </b-navbar>
+
+        <b-card no-body class="p-0 mt-0" style="min-height: 666px;">
+          <b-alert v-if="false" size="sm" dismissible variant="warning" show class="m-1 my-0">
+            Warning: This is experimental unaudited software. Revoke permissions when not required, at this early stage.
+          </b-alert>
+          <b-card class="m-2 p-1" header-class="warningheader" header="Welcome" v-if="!coinbase || chainId != '1'">
+            <b-card-text>
+              Please install the MetaMask extension, connect to the Ethereum Mainnet and refresh this page. Then click the [Connect] button on the top right.
+            </b-card-text>
+          </b-card>
+
+          <!-- :MODALPUNK -->
+          <b-modal id="modal-punk" hide-footer size="lg">
+            <template #modal-title>
+              <font size="-1">Punk {{ modalPunk.punkId }}</font>
+            </template>
+            <b-form-group label-cols-lg="2" label="Punk" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="Id:" label-for="punk-punkid" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="punk-punkid" :href="'https://cryptopunks.app/cryptopunks/details/' + modalPunk.punkId" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">{{ modalPunk.punkId }}</b-button>
+                </font>
+              </b-form-group>
+              <b-form-group label="Image:" label-for="punk-image" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <b-img-lazy width="100%" :src="'images/punks/punk' + ('' + modalPunk.punkId).toString().padStart(4, '0') + '.png'" style="background-color: #638596"/>
+              </b-form-group>
+              <b-form-group label="Attributes:" label-for="punk-attributes" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <span v-for="(attribute, attributeIndex) in modalPunk.attributes" v-bind:key="attributeIndex">
+                  <b-badge size="sm" pill variant="light" v-b-popover.hover.bottom="slugToTitle(attribute.trait_type)" class="mr-1">{{ slugToTitle(attribute.value) }}</b-badge>
+                </span>
+              </b-form-group>
+            </b-form-group>
+            <b-form-group label-cols-lg="2" label="V1" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="Owner:" label-for="punk-v1owner" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="punk-v1owner" :href="'https://etherscan.io/address/' + indexToAddress[modalPunk.v1.ownerIndex]" v-b-popover.hover.bottom="'v1 Owner. Click to view in etherscan.io'" target="_blank">
+                    {{ ensOrAddress(indexToAddress[modalPunk.v1.ownerIndex], 42) }}
+                  </b-button>
+                </font>
+              </b-form-group>
+              <b-form-group label="Wrapped:" label-for="punk-v1wrapped" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <span v-if="modalPunk.v1.wrapped">
+                    <b-button size="sm" variant="link" id="punk-v1wrapped" :href="'https://opensea.io/assets/ethereum/0x282bdd42f4eb70e7a9d9f40c8fea0825b7f68c5d/' + modalPunk.punkId" v-b-popover.hover.bottom="'Wrapped v1. Click to view in opensea.io'" target="_blank">
+                      Yes
+                    </b-button>
+                  </span>
+                  <span v-else>
+                    <b-button size="sm" variant="transparent">No</b-button>
+                  </span>
+                </font>
+              </b-form-group>
+            </b-form-group>
+            <b-form-group label-cols-lg="2" label="V2" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="Owner:" label-for="punk-v2owner" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="punk-v2owner" :href="'https://etherscan.io/address/' + indexToAddress[modalPunk.v2.ownerIndex]" v-b-popover.hover.bottom="'v2 Owner. Click to view in etherscan.io'" target="_blank">
+                    {{ ensOrAddress(indexToAddress[modalPunk.v2.ownerIndex], 42) }}
+                  </b-button>
+                </font>
+              </b-form-group>
+              <b-form-group label="Wrapped:" label-for="punk-v2wrapped" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <span v-if="modalPunk.v2.wrapped">
+                    <b-button size="sm" variant="link" id="punk-v2wrapped" :href="'https://opensea.io/assets/ethereum/0xb7f7f6c52f2e2fdb1963eab30438024864c313f6/' + modalPunk.punkId" v-b-popover.hover.bottom="'Wrapped v2. Click to view in opensea.io'" target="_blank">
+                      Yes
+                    </b-button>
+                  </span>
+                  <span v-else>
+                    <b-button size="sm" variant="transparent">No</b-button>
+                  </span>
+                </font>
+              </b-form-group>
+            </b-form-group>
+          </b-modal>
+
+          <!-- :MODALADDRESS -->
+          <b-modal id="modal-address" hide-footer size="lg">
+            <template #modal-title>
+              <font size="-1">Address {{ modalAddress.address }}</font>
+              <b-button size="sm" @click="copyToClipboard(modalAddress.address);" variant="link" class="m-0 p-0" v-b-popover.hover.top="'Copy to clipboard'"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+            </template>
+            <b-form-group label-cols-lg="2" label="Address" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="Address:" label-for="address-address" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="address-address" :href="'https://etherscan.io/address/' + modalAddress.address" v-b-popover.hover.bottom="'address. Click to view in etherscan.io'" target="_blank">{{ modalAddress.address }}</b-button>
+                </font>
+              </b-form-group>
+              <b-form-group v-if="modalAddress.name" label="Name:" label-for="address-name" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="address-address" :href="'https://etherscan.io/address/' + modalAddress.address" v-b-popover.hover.bottom="'ENS name or configured name. Click to view in etherscan.io'" target="_blank">{{ modalAddress.name }}</b-button>
+                </font>
+              </b-form-group>
+            </b-form-group>
+          </b-modal>
+
+          <!-- :MODALTX -->
+          <b-modal id="modal-tx" hide-footer size="xl">
+            <template #modal-title>
+              <font size="-1">Tx {{ modalTx.txHash }}</font>
+            </template>
+            <b-form-group label-cols-lg="2" label="Tx" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="Hash:" label-for="tx-txhash" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="tx-txhash" :href="'https://etherscan.io/tx/' + modalTx.txHash" v-b-popover.hover.bottom="'Click to view in etherscan.io'" target="_blank">{{ modalTx.txHash }}</b-button>
+                  <b-button size="sm" @click="copyToClipboard(modalTx.txHash);" variant="link" class="m-0 p-0" v-b-popover.hover.top="'Copy to clipboard'"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+                </font>
+              </b-form-group>
+              <b-form-group label="At:" label-for="tx-timestamp" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button v-if="modalTx.timestamp" size="sm" variant="invisible" id="tx-timestamp"> {{ formatTimestamp(modalTx.timestamp) }}</b-button>
+                  <!-- <b-button v-if="modalTx.tx && modalTx.tx.transactionIndex" size="sm" variant="invisible" id="tx-txindex" v-b-popover.hover.bottom="'Transaction index within the block'"> {{ modalTx.tx.transactionIndex }}</b-button> -->
+                  <b-button v-if="modalTx.tx && modalTx.tx.blockNumber" size="sm" variant="link" id="tx-blocknumber" :href="'https://etherscan.io/block/' + modalTx.tx.blockNumber" v-b-popover.hover.bottom="'Click to view block in etherscan.io'" target="_blank">{{ commify0(modalTx.tx.blockNumber) }}</b-button>
+                  <b-button v-if="modalTx.tx && modalTx.tx.blockNumber" size="sm" @click="copyToClipboard(modalTx.tx.blockNumber);" variant="link" class="m-0 p-0" v-b-popover.hover.top="'Copy to clipboard'"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+                </font>
+              </b-form-group>
+              <b-form-group v-if="modalTx.tx && modalTx.tx.from" label="From:" label-for="tx-from" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="tx-from" :href="'https://etherscan.io/address/' + modalTx.tx.from" v-b-popover.hover.bottom="'Click to view in etherscan.io'" target="_blank">{{ ensOrAddress(modalTx.tx.from, 42) }}</b-button>
+                  <b-button size="sm" @click="copyToClipboard(modalTx.tx.from);" variant="link" class="m-0 p-0" v-b-popover.hover.top="'Copy to clipboard'"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+                </font>
+              </b-form-group>
+              <b-form-group v-if="modalTx.tx && modalTx.tx.to" label="To:" label-for="tx-to" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="link" id="tx-to" :href="'https://etherscan.io/address/' + modalTx.tx.to" v-b-popover.hover.bottom="'Click to view in etherscan.io'" target="_blank">{{ ensOrAddress(modalTx.tx.to, 42) }}</b-button>
+                  <b-button size="sm" @click="copyToClipboard(modalTx.tx.to);" variant="link" class="m-0 p-0" v-b-popover.hover.top="'Copy to clipboard'"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+                </font>
+              </b-form-group>
+              <b-form-group v-if="modalTx.functionCall" label="Function Call:" label-for="tx-functioncall" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="invisible" id="tx-functioncall">{{ modalTx.functionCall.name }}</b-button>
+                </font>
+              </b-form-group>
+              <b-form-group v-if="modalTx.functionCall" label="" label-for="tx-functioncallparameters" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <!-- <b-table small fixed striped sticky-header="200px" :fields="punkAttributesFields" :items="punkAttribute.attributeList" head-variant="light"> -->
+                <font size="-2">
+                  <b-table small fixed striped :fields="functionCallParametersFields" :items="modalTx.functionCall.parameters" head-variant="light">
+                    <template #cell(value)="data">
+                      <span v-if="data.item.type == 'address'">
+                        <b-link :href="'https://etherscan.io/address/' + data.item.value" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                          {{ ensOrAddress(data.item.value, 42) }}
+                        </b-link>
+                      </span>
+                      <span v-else-if="['minSalePriceInWei'].includes(data.item.parameter)">
+                        {{ formatETH(data.item.value, 0) }} <font size="-2">Ξ</font>
+                      </span>
+                      <span v-else>
+                        <b-badge pill variant="invisible" v-b-popover.hover.bottom="data.item.value">{{ data.item.value.substring(0, 42) + (data.item.value.length > 42 ? '...' : '') }}</b-badge>
+                      </span>
+                    </template>
+                  </b-table>
+                </font>
+                <!-- <font size="-1">
+                  <b-button size="sm" variant="invisible" label-for="tx-functioncallparameters">{{ modalTx.functionCall.parameters }}</b-button>
+                </font> -->
+              </b-form-group>
+              <b-form-group v-if="modalTx.tx && modalTx.tx.value" label="Value:" label-for="tx-value" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="invisible" id="tx-value">{{ formatETH(modalTx.tx.value, 0) }}</b-button><font size="-2">Ξ, {{ settings.reportingCurrency }} {{ commify2(modalTx.valueInReportingCurrency) }} @ {{ modalTx.exchangeRate }}</font>
+                </font>
+              </b-form-group>
+              <b-form-group label="Gas:" label-for="tx-gasused" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button v-if="modalTx.txReceipt && modalTx.txReceipt.gasUsed" size="sm" variant="invisible" id="tx-gasused" v-b-popover.hover.bottom="'Gas used'">{{ commify0(modalTx.txReceipt.gasUsed) }}</b-button>
+                  <font size="-2">
+                    /
+                  </font>
+                  <b-button v-if="modalTx.tx && modalTx.tx.gasLimit" size="sm" variant="invisible" id="tx-gaslimit" v-b-popover.hover.bottom="'Gas limit'">{{ commify0(modalTx.tx.gasLimit) }}</b-button>
+                  <font v-if="modalTx.txReceipt && modalTx.txReceipt.gasUsed && modalTx.tx && modalTx.tx.gasLimit" size="-2">
+                    {{ (modalTx.txReceipt.gasUsed/modalTx.tx.gasLimit*100).toFixed(0) + '%' }}
+                  </font>
+                  <font v-if="modalTx.txReceipt && modalTx.txReceipt.effectiveGasPrice" size="-2">
+                    {{ '@ ' + formatGas(modalTx.txReceipt.effectiveGasPrice, 2) + ' gwei' }}
+                  </font>
+                </font>
+              </b-form-group>
+              <b-form-group v-if="modalTx.txFee" label="Tx Fee:" label-for="tx-txfee" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-1">
+                  <b-button size="sm" variant="invisible" id="tx-txfee">{{ formatETH(modalTx.txFee, 0) }}</b-button><font size="-2">Ξ, {{ settings.reportingCurrency }} {{ commify2(modalTx.txFeeInReportingCurrency) }} @ {{ modalTx.exchangeRate }}</font>
+                </font>
+              </b-form-group>
+              <b-form-group v-if="modalTx.logs" label="Events:" label-for="tx-eventlogs" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                <font size="-2">
+                  <b-table small fixed striped :fields="eventLogFields" :items="modalTx.logs" head-variant="light">
+                    <template #cell(contract)="data">
+                      <b-link :href="'https://etherscan.io/address/' + data.item.contract" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                        {{ ensOrAddress(data.item.contract, 42) }}
+                      </b-link>
+                    </template>
+                    <template #cell(fields)="data">
+                      <span v-for="(field, index) of data.item.fields">
+                        <span v-if="field.type == 'address'" class="m-0 p-0">
+                          {{ field.field + '=' }}
+                          <b-link :href="'https://etherscan.io/address/' + field.value" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                            <b-badge pill variant="invisible">{{ ensOrAddress(field.value, 42) + '...' }}</b-badge>
+                          </b-link>
+                        </span>
+                        <span v-else class="m-0 p-0">
+                          {{ field.field + '=' }}
+                          <b-badge pill variant="invisible" v-b-popover.hover.bottom="field.value.toString()">{{ field.value.toString().substring(0, 42) + (field.value.toString().length > 42 ? '...' : '') }}</b-badge>
+                        </span>
+                        <span v-if="index != (data.item.fields - 1)">
+                          ,
+                        </span>
+                      </span>
+
+                    </template>
+                  </b-table>
+                </font>
+              </b-form-group>
+            </b-form-group>
+            <!-- <pre>
+{{ modalTx }}
+            </pre> -->
+          </b-modal>
+
+          <b-card class="m-0 p-0 border-0" body-class="m-1 p-0">
+            <!-- :TOOLBAR -->
+            <b-card-text v-if="coinbase" class="m-0 p-0">
+              <div class="d-flex flex-wrap m-0 p-0">
+                <div class="mt-0">
+                  <b-button size="sm" :pressed.sync="settings.showFilter" @click="saveSettings" variant="link" v-b-popover.hover.bottom="'Show filter'"><span v-if="settings.showFilter"><b-icon-layout-sidebar-inset shift-v="+1" font-scale="1.0"></b-icon-layout-sidebar-inset></span><span v-else><b-icon-layout-sidebar shift-v="+1" font-scale="1.0"></b-icon-layout-sidebar></span></b-button>
+                </div>
+                <div class="mt-0 pr-1" style="max-width: 11.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filterByIds" @change="saveSettings" debounce="600" v-b-popover.hover.bottom="'Filter by punk id(s) or first 3 (or more) characters of attribute names, e.g., `1 5-10 alien ape`. Replace spaces with `-`, e.g., `male-4`, `clown-nose` or `3d-gl`'" placeholder="🔍 id1 id2-id3 attrib1 ..."></b-form-input>
+                </div>
+                <div class="mt-0 pr-1" style="max-width: 11.0rem;">
+                  <b-form-input type="text" size="sm" v-model.trim="settings.filterByOwners" @change="saveSettings" debounce="600" v-b-popover.hover.bottom="'Filter owner addresses and names by space separated regex. Some custom names `larvalabs`, `yugalabs`, `dead:`'" placeholder="🔍 0x12ab... name1 ..."></b-form-input>
+                </div>
+                <div v-if="settings.tabIndex == 1" class="mt-0 pr-1">
+                  <b-form-checkbox-group size="sm" @input="saveSettings" v-model="settings.selectedContracts" :options="contractOptions" buttons button-variant="outline-primary" v-b-popover.hover.bottom="'Filter by [Wrapped] CryptoPunks V1 & V2'"></b-form-checkbox-group>
+                </div>
+                <div v-if="Object.keys(settings.filters).length > 0 || settings.filterByIds || settings.filterByOwners" class="mt-0 pr-1">
+                  <b-button size="sm" @click="resetFilters();" variant="link" class="m-0 p-0" v-b-popover.hover.bottom="'Reset filters'">
+                    <b-iconstack shift-v="-4" font-scale="1">
+                      <b-icon stacked icon="funnel-fill" variant="info" scale="1"></b-icon>
+                      <b-icon stacked icon="x" variant="danger" scale="1.3"></b-icon>
+                    </b-iconstack>
+                  </b-button>
+                </div>
+                <div class="mt-0 flex-grow-1">
+                </div>
+                <div v-if="!sync.section" class="mt-0 pr-1">
+                  <b-button size="sm" @click="syncIt(false)" variant="primary" v-b-popover.hover.bottom="'Sync CryptoPunks Event Logs. This will take ~10 minutes initially, and < 1 minute subsequently'">Sync</b-button>
+                </div>
+                <div v-if="!sync.section" class="mt-0 pr-1">
+                  <b-button size="sm" @click="syncIt(true)" variant="outline-primary" v-b-popover.hover.bottom="'This will do dev things'">Dev</b-button>
+                </div>
+                <div v-if="sync.section" class="mt-1 p-0" style="width: 300px;">
+                  <b-progress height="1.5rem" :max="sync.total" show-progress :animated="!sync.section" :variant="sync.section ? 'success' : 'secondary'" v-b-popover.hover.bottom="'{processed blocked number}/{latest block number}. Click the button on the right to stop this process. This process can be continued later'">
+                    <b-progress-bar :value="sync.completed">
+                      {{ sync.total == null || sync.total == 0 ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+                    </b-progress-bar>
+                  </b-progress>
+                </div>
+                <div class="ml-0 mt-1">
+                  <b-link v-if="sync.section" size="sm" @click="halt" variant="link" v-b-popover.hover.bottom="'Click to stop. It may take a few minutes to clean up. This process can be continued later'"><b-icon-stop-fill shift-v="+1" font-scale="1.0"></b-icon-stop-fill></b-link>
+                </div>
+                <div class="mt-0 flex-grow-1">
+                </div>
+                <div class="mt-0 pl-1">
+                  <b-button size="sm" :pressed.sync="settings.showInfo" @click="saveSettings" variant="link" v-b-popover.hover.bottom="'Show info'"><span v-if="settings.showInfo"><b-icon-info-circle-fill shift-v="+1" font-scale="1.0"></b-icon-info-circle-fill></span><span v-else><b-icon-info-circle shift-v="+1" font-scale="1.0"></b-icon-info-circle></span></b-button>
+                </div>
+                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.punksTable.sortOption" @change="saveSettings" :options="punksSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                </div>
+                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.activityTable.sortOption" @change="saveSettings" :options="activitySortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                </div>
+                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.ownersTable.sortOption" @change="saveSettings" :options="ownersSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+                </div>
+                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                  <font size="-2" v-b-popover.hover.bottom="'# tokens'">{{ filteredSortedPunks.length + '/' + punkAttributes.length }}</font>
+                </div>
+                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                  <font size="-2" v-b-popover.hover.bottom="'# events'">{{ filteredSortedActivity.length + '/' + Object.keys(txs).length }}</font>
+                </div>
+                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                  <font size="-2" v-b-popover.hover.bottom="'# owners'">{{ filteredSortedOwners.length + '/' + Object.keys(owners).length }}</font>
+                </div>
+                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                  <b-pagination size="sm" v-model="settings.punksTable.currentPage" @input="saveSettings" :total-rows="filteredSortedPunks.length" :per-page="settings.punksTable.pageSize" style="height: 0;"></b-pagination>
+                </div>
+                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                  <b-pagination size="sm" v-model="settings.activityTable.currentPage" @input="saveSettings" :total-rows="filteredSortedActivity.length" :per-page="settings.activityTable.pageSize" style="height: 0;"></b-pagination>
+                </div>
+                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                  <b-pagination size="sm" v-model="settings.ownersTable.currentPage" @input="saveSettings" :total-rows="filteredSortedOwners.length" :per-page="settings.ownersTable.pageSize" style="height: 0;"></b-pagination>
+                </div>
+                <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.punksTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                </div>
+                <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.activityTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                </div>
+                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                  <b-form-select size="sm" v-model="settings.ownersTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+                </div>
+              </div>
+            </b-card-text>
+
+            <b-card-text class="m-0 p-0">
+              <b-row class="m-0 p-0">
+                <b-col v-if="settings.showFilter" cols="2" class="m-0 p-0 border-0">
+                  <!-- :SIDEBAR -->
+                  <b-card no-header no-body class="m-0 p-0 border-0">
+                    <!-- <b-card-body class="m-0 p-1" style="flex-grow: 1; max-height: 3000px; overflow-y: auto;"> -->
+                    <b-card-body class="m-0 mt-0 pl-0 pr-2 py-1" style="flex-grow: 1; max-height: 3000px; overflow-y: auto;">
+                      <div v-for="punkAttribute of punkAttributesWithTokenIds">
+                        <b-card header-class="m-0 px-2 pt-2 pb-0" body-class="p-0" class="m-0 p-0 border-0">
+                          <template #header>
+                            <span variant="secondary" class="small truncate">
+                              {{ slugToTitle(punkAttribute.attributeType) }}
+                            </span>
+                          </template>
+                        </b-card>
+                        <font size="-2">
+                          <b-table small fixed striped sticky-header="200px" :fields="punkAttributesFields" :items="punkAttribute.attributeList" head-variant="light">
+                            <template #cell(select)="data">
+                              <b-form-checkbox size="sm" :checked="(settings.filters[punkAttribute.attributeType] && settings.filters[punkAttribute.attributeType][data.item.attribute]) ? 1 : 0" value="1" @change="filterChanged(punkAttribute.attributeType, data.item.attribute)"></b-form-checkbox>
+                            </template>
+                            <template #cell(attributeOption)="data">
+                              {{ slugToTitle(data.item.attribute) }}
+                            </template>
+                            <template #cell(attributeTotal)="data">
+                              {{ data.item.punks.length }}
+                            </template>
+                          </b-table>
+                        </font>
+                      </div>
+                    </b-card-body>
+                  </b-card>
+                </b-col>
+
+                <b-col class="m-0 p-0">
+                  <!-- :INFO -->
+                  <b-card v-if="settings.showInfo || coinbase == null" no-body class="my-1 p-1">
+                    <b-card-body class="mt-1 p-1">
+                      <h4>Welcome</h4>
+                      This dapp retrieves historical log events from the <b-link href="https://cryptopunks.app/" target="_blank">CryptoPunks</b-link> contracts on the Ethereum mainnet, collates the data, and provides an interface for users to query the data.
+                      This dapp currently takes about 10 minutes to retrieve the data initially, and about a minute to sync subsequently.
+                      <h5 class="mt-4">How This Works</h5>
+                      <ul>
+                        <li>Event logs are retrieved via your browser's web3 connection for the CryptoPunks <b-link href="https://etherscan.io/address/0x6Ba6f2207e343923BA692e5Cae646Fb0F566DB8D#code" target="_blank">V1</b-link> and <b-link href="https://etherscan.io/address/0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB#code" target="_blank">V2</b-link>, and Wrapped CryptoPunks <b-link href="https://etherscan.io/address/0x282BDD42f4eb70e7A9D9F40c8fEA0825B7f68C5D#code" target="_blank">V1</b-link> and <b-link href="https://etherscan.io/address/0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6#code" target="_blank">V2</b-link> contracts</li>
+                        <li>Block timestamps are retrieved from the <b-link href="https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks" target="_blank">https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks</b-link> subgraph API endpoint</li>
+                        <li>Exchange rates are retrieved from <b-link href="https://min-api.cryptocompare.com" target="_blank">https://min-api.cryptocompare.com</b-link>. Get your API key here and enter it in the Config page (some free initial queries without the API key)</li>
+                        <li>The resulting data is collated and presented in this dapp</li>
+                      </ul>
+                      <h5 class="mt-3">Requirements</h5>
+                      <ul>
+                        <li>This dapp runs in web3 enabled desktop browsers connected to the Ethereum mainnet</li>
+                      </ul>
+                      <h5 class="mt-3">References</h5>
+                      <ul>
+                        <li>Dapp: <b-link href="https://bokkypoobah.github.io/CryptoPunksData/" target="_blank">https://bokkypoobah.github.io/CryptoPunksData/</b-link></li>
+                        <li>GitHub: <b-link href="https://github.com/bokkypoobah/CryptoPunksData" target="_blank">https://github.com/bokkypoobah/CryptoPunksData</b-link></li>
+                        <li>Main Dapp Source Code: <b-link href="https://github.com/bokkypoobah/CryptoPunksData/blob/master/docs/index.html" target="_blank">https://github.com/bokkypoobah/CryptoPunksData/blob/master/docs/index.html</b-link></li>
+                      </ul>
+                      <h5 class="mt-3">Running Locally</h5>
+                      <ul>
+                        <li>In a folder on your computer, <b>git clone <b-link href="https://github.com/bokkypoobah/CryptoPunksData" target="_blank">https://github.com/bokkypoobah/CryptoPunksData</b-link></b></li>
+                        <li>Run a tool like <b-link href="https://www.npmjs.com/package/anywhere" target="_blank">anywhere</b-link> in the <b>./docs</b> subdirectory of the folder created above</li>
+                      </ul>
+                      <h5 class="mt-3">This Dapp Design</h5>
+                      <ul>
+                        <li>Addresses and transaction hashes are stored as integer indices into lookup tables to save on memory and computations</li>
+                        <li>Arrays are used instead of Maps in some sections to save on memory and computations</li>
+                        <li><b-link href="https://github.com/bokkypoobah/CryptoPunksData/tree/master/docs/images/punks" target="_blank">10k 24x24 punk images</b-link> were split from the original <b-link href="https://raw.githubusercontent.com/larvalabs/cryptopunks/master/punks.png" target="_blank">punks.png</b-link> using the <b-link href="https://github.com/bokkypoobah/aenus/blob/main/scripts/01_splitImage.js" target="_blank">01_splitImage.js</b-link> script</li>
+                        <li><b-link href="https://raw.githubusercontent.com/bokkypoobah/CryptoPunksData/master/docs/punkAttributes.js" target="_blank">10k punk attributes</b-link> were extracted from the <i>CryptopunksData</i> contract at <b-link href="https://etherscan.io/address/0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2#code" target="_blank">0x16F5A35647D6F03D5D3da7b35409D65ba03aF3B2</b-link> using the <b-link href="https://github.com/bokkypoobah/aenus/blob/main/scripts/02_scrapeCryptoPunksAttributes.js" target="_blank">02_scrapeCryptoPunksAttributes.js</b-link> script</li>
+                      </ul>
+                      <h5 class="mt-3">Some Info</h5>
+                      <ul>
+                        <li>Three v1s were claimed with invalid ids <b-link href="https://etherscan.io/tx/0x39d77a95637640b6291bea0b015be4f6578c95f9a57af6a9399dabd70b56d50c" target="_blank">9845944</b-link>, <b-link href="https://etherscan.io/tx/0xdc37a82d43eb253077abd4618683efea615fc8573bfc669568fab04098ab24b1" target="_blank">76623</b-link> and <b-link href="https://etherscan.io/tx/0x7da83b5002251ca83537aef8833f443263a9109a1ccca502b0b03a0529813aa2" target="_blank">0xffff...ffff</b-link>. This resulted in 3 unassigned v1s 1416, 1838 and 1841</li>
+                        <li>LarvaLabs airdropped these 3 unassigned v2s <b-link href="https://cryptopunks.app/cryptopunks/details/1416" target="_blank">1416</b-link>, <b-link href="https://cryptopunks.app/cryptopunks/details/1838" target="_blank">1838</b-link> and <b-link href="https://cryptopunks.app/cryptopunks/details/1841" target="_blank">1841</b-link> to <b-link href="https://etherscan.io/address/0x5b098b00621eda6a96b7a476220661ad265f083f" target="_blank">0x5b098b...</b-link></li>
+                        <li>Two v2s <b-link href="https://etherscan.io/tx/0xce9bdec865497ba6d3c7e26bdfac54d4270285361a0f65ff09f042997b318b38" target="_blank">2838</b-link> and <b-link href="https://etherscan.io/tx/0x2c7a8584e8c3d5c14232881f2e7aef4cbacfe1cb729b67b129f84b0384018330" target="_blank">5449</b-link> have been incorrectly transferred to the v2 CryptoPunk contract</li>
+                      </ul>
+                      <h5 class="mt-3">Troubleshooting</h5>
+                      <ul>
+                        <li>If this dapp is not receiving the latest Mainnet data, reset your MetaMask web3 connection using <b>Settings</b> -> <b>Advanced</b> -> <b>Clear activity and nonce data</b></li>
+                      </ul>
+                      <h5 class="mt-3">CryptoPunks History</h5>
+                      <ul>
+                        <li>The v1 contract was deployed to <b-link href="https://etherscan.io/address/0x6Ba6f2207e343923BA692e5Cae646Fb0F566DB8D#code" target="_blank">0x6Ba6f2207e343923BA692e5Cae646Fb0F566DB8D</b-link> at Jun-09-2017 12:22:50 AM +UTC</li>
+                        <li><b-link href="https://www.reddit.com/r/ethereum/comments/6g8cma/cryptopunks_an_experiment_in_digital_collectibles/" target="_blank">CryptoPunks: An experiment in digital collectibles on Ethereum</b-link> announced on Reddit at Jun-09-2017 01:19:08 AM UTC</li>
+                        <li>Due to a <b-link href="https://twitter.com/cryptopunksnfts/status/876106428200738816" target="_blank">bug in v1 contract</b-link>, <b-link href="https://twitter.com/cryptopunksnfts/status/878353034194984961" target="_blank">v2 was deployed</b-link> to <b-link href="https://etherscan.io/address/0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB#code" target="_blank">0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB</b-link> at Jun-22-2017 07:40:00 PM +UTC</li>
+                        <li>The ERC-721 wrapper for the v2 contract was deployed to <b-link href="https://etherscan.io/address/0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6#code" target="_blank">0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6</b-link> at Sep-08-2020 03:11:25 PM +UTC</li>
+                        <li>The ERC-721 wrapper for the v1 contract was deployed to <b-link href="https://etherscan.io/address/0x282BDD42f4eb70e7A9D9F40c8fEA0825B7f68C5D#code" target="_blank">0x282BDD42f4eb70e7A9D9F40c8fEA0825B7f68C5D</b-link> at Jan-17-2022 10:15:07 AM +UTC</li>
+                      </ul>
+                    </b-card-body>
+                  </b-card>
+
+                  <!-- :PUNKS -->
+                  <b-table v-if="settings.tabIndex == 0 && !settings.showInfo" small fixed striped responsive hover :fields="punksFields" :items="pagedFilteredSortedPunks" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
+                    <template #cell(punkId)="data">
+                      <b-link @click="showModalPunk(data.item.punkId);" v-b-popover.hover.bottom="'Click for details'">
+                        <b-badge pill variant="info">{{ data.item.punkId }}</b-badge>
+                      </b-link>
+                    </template>
+                    <template #cell(image)="data">
+                      <b-link @click="showModalPunk(data.item.punkId);" v-b-popover.hover.bottom="'Click for details'">
+                        <b-img-lazy width="100%" :src="'images/punks/punk' + data.item.punkId.toString().padStart(4, '0') + '.png'" style="background-color: #638596"/>
+                      </b-link>
+                    </template>
+                    <template #cell(v1Owner)="data">
+                      <b-link v-if="data.item.v1.ownerIndex" @click="showModalAddress(data.item.v1.ownerIndex);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                        {{ ensOrAddress(data.item.v1.ownerIndex, 16) }}
+                      </b-link>
+                      <span v-if="data.item.v1.offer">
+                        Offer: {{ data.item.v1.offer }}
+                      </span>
+                    </template>
+                    <template #cell(v1Wrapped)="data">
+                      <font size="-1">
+                        <b-badge v-if="data.item.v1.wrapped" size="sm" pill variant="light">Wrapped</b-badge>
+                      </font>
+                    </template>
+                    <template #cell(v2Owner)="data">
+                      <b-link v-if="data.item.v2.ownerIndex" @click="showModalAddress(data.item.v2.ownerIndex);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                        {{ ensOrAddress(data.item.v2.ownerIndex, 16) }}
+                      </b-link>
+                      <span v-if="data.item.v2.offer">
+                        Offer: {{ data.item.v2.offer }}
+                      </span>
+                      <span v-if="data.item.v2.bid">
+                        Bid: {{ data.item.v2.bid }}
+                      </span>
+                    </template>
+                    <template #cell(v2Wrapped)="data">
+                      <font size="-1">
+                        <b-badge v-if="data.item.v2.wrapped" size="sm" pill variant="light">Wrapped</b-badge>
+                      </font>
+                    </template>
+                    <template #cell(attribute)="data">
+                      <span v-for="(attribute, attributeIndex) in data.item.attributes" v-bind:key="attributeIndex">
+                        <b-badge size="sm" pill variant="light" v-b-popover.hover.bottom="slugToTitle(attribute.trait_type)" class="mr-1">{{ slugToTitle(attribute.value) }}</b-badge>
+                      </span>
+                    </template>
+                  </b-table>
+
+                  <!-- :ACTIVITY -->
+                  <b-table v-if="settings.tabIndex == 1 && !settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
+                    <template #head(timestamp)="data">
+                      When
+                    </template>
+                    <template #cell(number)="data">
+                      {{ parseInt(data.index) + ((settings.activityTable.currentPage - 1) * settings.activityTable.pageSize) + 1 }}
+                    </template>
+                    <template #cell(timestamp)="data">
+                      <font size="-1">
+                        <b-link @click="showModalTx(data.item[4]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                          {{ formatTimestamp(data.item[0]) }}
+                        </b-link>
+                        <!-- <font size="-2">
+                          <b-link @click="showModalTx(data.item[4]);">🔍</b-link>
+                        </font> -->
+                      </font>
+                      <br />
+                      <font size="-2">
+                        {{ data.item[1] + ':' + data.item[2] + '.' + data.item[3] + ':' + indexToTxHash[data.item[4]] }}
+                      </font>
+                    </template>
+                    <template #cell(action)="data">
+                      <font size="-1">
+                        <b-badge pill variant="light">{{ indexToTransactionTypes[data.item[5][0]] }}</b-badge>
+                      </font>
+                    </template>
+                    <template #cell(from)="data">
+                      <font size="-1">
+                        <b-link v-if="[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(data.item[5][0])" @click="showModalAddress(data.item[5][1]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                          <b-badge pill variant="light">{{ ensOrAddress(data.item[5][1], 24) }}</b-badge>
+                        </b-link>
+                      </font>
+                    </template>
+                    <template #cell(to)="data">
+                      <font size="-1">
+                        <b-link v-if="[0, 1, 2, 3, 6, 9, 10, 11, 12, 13, 14, 15].includes(data.item[5][0])" @click="showModalAddress(data.item[5][2]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                          <b-badge pill variant="light">{{ ensOrAddress(data.item[5][2], 24) }}</b-badge>
+                        </b-link>
+                        <b-link v-else-if="data.item[5][0] == 4 && data.item[5][2] > 0" @click="showModalAddress(data.item[5][2]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                          <b-badge pill variant="light">{{ ensOrAddress(data.item[5][2], 24) }}</b-badge>
+                        </b-link>
+                      </font>
+                    </template>
+                    <template #cell(punk)="data">
+                      <font size="-1">
+                        <span v-if="[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(data.item[5][0])">
+                          <b-link @click="showModalPunk(data.item[5][3]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                            <b-img-lazy width="100%" :src="'images/punks/punk' + data.item[5][3].toString().padStart(4, '0') + '.png'" :style="backgroundStyles[data.item[6][data.item[6].length-1]]"/>
+                          </b-link>
+                          <b-link @click="showModalPunk(data.item[5][3]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                            <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge>
+                          </b-link>
+                        </span>
+                      </font>
+                    </template>
+
+                    <template #cell(value)="data">
+                      <!-- 13: ApprovalForAll value -->
+                      <span v-if="[13].includes(data.item[5][0])">
+                        <b-badge pill variant="light">{{ data.item[5][3] }}</b-badge>
+                      </span>
+                      <font size="-1">
+                        <!-- 4:Offer, 6:Purchase, 7:Bid, 8:RemoveBid, 9:AcceptBid -->
+                        <span v-if="[4, 6, 7, 8, 9].includes(data.item[5][0])">
+                          {{ formatETH(data.item[5][4], 0) }}<font size="-2">Ξ</font>
+                          <br />
+                          <font size="-2">
+                            {{ settings.reportingCurrency }} {{ commify2(data.item[5][5]) }} @ {{ commify2(data.item[5][6]) }}
+                          </font>
+                        </span>
+                      </font>
+                      <span v-if="data.item[5][0] == 0">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Reserve -->
+                        <!-- {{ data.item[5][2].join(", ") }} -->
+                        <!-- <span v-for="punkId of data.item[5][3]">
+                          <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + punkId" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank" class="pr-2">
+                            <b-badge pill variant="info">{{ punkId }}</b-badge>
+                          </b-link>
+                        </span> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 1">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Claim -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge>
+                        </b-link> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 2">
+                        <!-- Airdrop -->
+                        <!-- {{ data.item[5][2].join(", ") }} -->
+                        <!-- <span v-for="item of data.item[5][3]">
+                          <b-badge pill variant="warning">{{ ensOrAddress(item[0], 16) }}</b-badge>
+                          <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + item[1]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank" class="pr-2">
+                            <b-badge pill variant="info">{{ item[1] }}</b-badge>
+                          </b-link>
+                        </span> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 3">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Transfer -->
+                        <!-- <b-link v-if="data.item[5][2] != 0" :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][2]]" v-b-popover.hover.bottom="'to. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge>
+                        </b-link>
+                        <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge>
+                        </b-link> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 4">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Offer -->
+                        <!-- <b-badge v-if="data.item[5][2] != 0" pill v-b-popover.hover.bottom="'To'" variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge> -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge>
+                        </b-link> -->
+                        <!-- <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(data.item[5][4]) }}</b-badge> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 5">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        RemoveOffer -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][2]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][2] }}</b-badge>
+                        </b-link> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 6">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Purchase -->
+                        <!-- <b-link v-if="data.item[5][2] != 0" :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][2]]" v-b-popover.hover.bottom="'to. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge>
+                        </b-link>
+                        <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge>
+                        </b-link> -->
+                        <!-- <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(data.item[5][4]) }}</b-badge> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 7">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Bid -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][2]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][2] }}</b-badge>
+                        </b-link> -->
+                        <!-- <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(data.item[5][3]) }}</b-badge> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 8">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        RemoveBid -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][2]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][2] }}</b-badge>
+                        </b-link> -->
+                        <!-- <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(data.item[5][3]) }}</b-badge> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 9">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        AcceptBid -->
+                        <!-- <b-link v-if="data.item[5][2] != 0" :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][2]]" v-b-popover.hover.bottom="'to. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge>
+                        </b-link> -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge>
+                        </b-link> -->
+                        <!-- <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(data.item[5][4]) }}</b-badge> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 10">
+                        <!-- TODO: v1 & v2 -->
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Wrap -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][2]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][2] }}</b-badge>
+                        </b-link> -->
+                        <!-- <font size="-2">
+                          <pre>
+{{ data.item }}
+                          </pre>
+                        </font> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 11">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Unwrap -->
+                        <!-- <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][2]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][2] }}</b-badge>
+                        </b-link> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 12">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        Approval -->
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][2]]" v-b-popover.hover.bottom="'approved. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge>
+                        </b-link>
+                        <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + data.item[5][3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                          <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge>
+                        </b-link> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 13">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        ApprovalForAll -->
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][2]]" v-b-popover.hover.bottom="'approved. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge>
+                        </b-link>
+                        <b-badge pill variant="info">{{ data.item[5][3] }}</b-badge> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 14">
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][1]]" v-b-popover.hover.bottom="'previousOwner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        </b-link>
+                        OwnershipTransferred -->
+                        <!-- <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item[5][2]]" v-b-popover.hover.bottom="'newOwner. Click to view in etherscan.io'" target="_blank">
+                          <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge>
+                        </b-link> -->
+                        <!-- <font size="-2">
+                          <pre>
+{{ data.item }}
+                          </pre>
+                        </font> -->
+                      </span>
+                      <span v-else-if="data.item[5][0] == 15">
+                        <!-- <b-badge pill variant="warning">{{ ensOrAddress(data.item[5][1], 16) }}</b-badge>
+                        ProxyRegistered -->
+                        <!-- <b-badge v-if="data.item[5][2] != 0" pill v-b-popover.hover.bottom="'Proxy'" variant="warning">{{ ensOrAddress(data.item[5][2], 16) }}</b-badge> -->
+                      </span>
+                      <span v-else>
+                        <font size="-1">
+                          <span v-for="event in data.item[8]">
+                            <!-- <b-badge pill variant="light" v-b-popover.hover="'logIndex'">{{ event[0] }}</b-badge> -->
+                            <b-badge v-if="event[1] == 1" pill variant="success" v-b-popover.hover="'CryptoPunks V1. log #' + event[0]">v1</b-badge>
+                            <b-badge v-else-if="event[1] == 2" pill variant="primary" v-b-popover.hover="'CryptoPunks V2. log #' + event[0]">v2</b-badge>
+                            <b-badge v-else-if="event[1] == 3" pill variant="success" v-b-popover.hover="'WrappedCryptoPunks V1. log #' + event[0]">w1</b-badge>
+                            <b-badge v-else-if="event[1] == 4" pill variant="primary" v-b-popover.hover="'WrappedCryptoPunks V2. log #' + event[0]">w2</b-badge>
+                            <b-badge v-else pill variant="warning">???</b-badge>
+                            <span v-if="event[2] == 0">
+                              Assign
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[3]]" v-b-popover.hover.bottom="'to. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[3], 16) }}</b-badge>
+                              </b-link>
+                             <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[4]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                               <b-badge pill variant="info">{{ event[4] }}</b-badge>
+                             </b-link>
+                            </span>
+                            <span v-else-if="event[2] == 1">
+                              Transfer
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[3]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[3], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[4]]" v-b-popover.hover.bottom="'to. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[4], 16) }}</b-badge>
+                              </b-link>
+                              <span v-if="event[1] <= 2">
+                                <b-badge pill variant="light" v-b-popover.hover="'Amount'">{{ event[5] }}</b-badge>
+                              </span>
+                              <span v-else>
+                                <!-- TODO: Point to wrapped item -->
+                                <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[5]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                  <b-badge pill variant="info">{{ event[5] }}</b-badge>
+                                </b-link>
+                              </span>
+                            </span>
+                            <span v-else-if="event[2] == 2">
+                              PunkTransfer
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[3]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[3], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[4]]" v-b-popover.hover.bottom="'to. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[4], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[5]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                <b-badge pill variant="info">{{ event[5] }}</b-badge>
+                              </b-link>
+                              <!-- // v1 v2 event PunkTransfer(address indexed from, address indexed to, uint256 punkIndex); -->
+                            </span>
+                            <span v-else-if="event[2] == 3">
+                              PunkOffered
+                              <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                <b-badge pill variant="info">{{ event[3] }}</b-badge>
+                              </b-link>
+                              <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(event[4]) }}</b-badge>
+                              <b-link v-if="event[5] != 0" :href="'https://etherscan.io/address/' + indexToAddress[event[5]]" v-b-popover.hover.bottom="'Offered to. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[5], 16) }}</b-badge>
+                              </b-link>
+                              <!-- // v1 v2 event PunkOffered(uint indexed punkIndex, uint minValue, address indexed toAddress); -->
+                            </span>
+                            <span v-else-if="event[2] == 4">
+                              PunkNoLongerForSale
+                              <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                <b-badge pill variant="info">{{ event[3] }}</b-badge>
+                              </b-link>
+                              <!-- // v1 v2 event PunkNoLongerForSale(uint indexed punkIndex); -->
+                            </span>
+                            <span v-else-if="event[2] == 5">
+                              PunkBidEntered
+                              <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                <b-badge pill variant="info">{{ event[3] }}</b-badge>
+                              </b-link>
+                              <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(event[4]) }}</b-badge>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[5]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[5], 16) }}</b-badge>
+                              </b-link>
+                              <!-- //    v2 event PunkBidEntered(uint indexed punkIndex, uint value, address indexed fromAddress); -->
+                            </span>
+                            <span v-else-if="event[2] == 6">
+                              PunkBidWithdrawn
+                              <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                <b-badge pill variant="info">{{ event[3] }}</b-badge>
+                              </b-link>
+                              <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(event[4]) }}</b-badge>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[5]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[5], 16) }}</b-badge>
+                              </b-link>
+                              <!-- //    v2 event PunkBidWithdrawn(uint indexed punkIndex, uint value, address indexed fromAddress); -->
+                            </span>
+                            <span v-else-if="event[2] == 7">
+                              PunkBought
+                              <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[3]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                <b-badge pill variant="info">{{ event[3] }}</b-badge>
+                              </b-link>
+                              <b-badge pill variant="light" v-b-popover.hover="'Amount in ETH'">{{ formatETH(event[4]) }}</b-badge>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[5]]" v-b-popover.hover.bottom="'from. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[5], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[6]]" v-b-popover.hover.bottom="'to. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[6], 16) }}</b-badge>
+                              </b-link>
+                              <!-- // v1 v2 event PunkBought(uint indexed punkIndex, uint value, address indexed fromAddress, address indexed toAddress); -->
+                            </span>
+                            <span v-else-if="event[2] == 8">
+                              Approval
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[3]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[3], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[4]]" v-b-popover.hover.bottom="'approved. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[4], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://cryptopunks.app/cryptopunks/details/' + event[5]" v-b-popover.hover.bottom="'punkId. Click to view in cryptopunks.app'" target="_blank">
+                                <b-badge pill variant="info">{{ event[5] }}</b-badge>
+                              </b-link>
+
+                              <!-- // w1 w2 event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId); -->
+                            </span>
+                            <span v-else-if="event[2] == 9">
+                              ApprovalForAll
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[3]]" v-b-popover.hover.bottom="'owner. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[3], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[4]]" v-b-popover.hover.bottom="'operator. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[4], 16) }}</b-badge>
+                              </b-link>
+                              <b-badge pill variant="light" v-b-popover.hover="'approved'">{{ event[5] }}</b-badge>
+                              <!-- // w1 w2 event ApprovalForAll(address indexed owner, address indexed operator, bool approved); -->
+                            </span>
+                            <span v-else-if="event[2] == 10">
+                              OwnershipTransferred
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[3]]" v-b-popover.hover.bottom="'previousOwner. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[3], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[4]]" v-b-popover.hover.bottom="'newOwner. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[4], 16) }}</b-badge>
+                              </b-link>
+                              <!-- // w1 w2 event OwnershipTransferred(address indexed previousOwner, address indexed newOwner); -->
+                            </span>
+                            <span v-else-if="event[2] == 11">
+                              ProxyRegistered
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[3]]" v-b-popover.hover.bottom="'user. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[3], 16) }}</b-badge>
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[event[4]]" v-b-popover.hover.bottom="'proxy. Click to view in etherscan.io'" target="_blank">
+                                <b-badge pill variant="warning">{{ ensOrAddress(event[4], 16) }}</b-badge>
+                              </b-link>
+                              <!-- //    w2 event ProxyRegistered(address user, address proxy); -->
+                            </span>
+                            &nbsp;&nbsp;
+                          </span>
+                        </font>
+                        <!-- <font size="-2">
+                          <pre>
+{{ data.item }}
+                          </pre>
+                        </font> -->
+                      </span>
+                    </template>
+                  </b-table>
+
+                  <!-- :OWNERS -->
+                  <b-table v-if="settings.tabIndex == 2 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
+                    <template #cell(number)="data">
+                      {{ parseInt(data.index) + ((settings.ownersTable.currentPage - 1) * settings.ownersTable.pageSize) + 1 }}
+                    </template>
+                    <template #cell(owner)="data">
+                      <font size="-1">
+                        <b-link @click="showModalAddress(data.item[0]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                          <b-badge pill variant="light">{{ ensOrAddress(data.item[0], 24) }}</b-badge>
+                        </b-link>
+                      </font>
+                    </template>
+                    <template #cell(v1)="data">
+                      <b-badge v-if="data.item[1].length > 0" pill variant="secondary">{{ data.item[1].length }}</b-badge>
+                      <font size="-1">
+                        <b-card-group deck class="m-1 ml-0 p-0">
+                          <span v-for="e of data.item[1]">
+                            <b-card body-class="p-0" footer-class="m-0 p-0" class="m-1 p-0 border-0" style="max-width: 6rem;">
+                              <b-link @click="showModalPunk(e[0]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                                <b-img-lazy width="100%" :src="'images/punks/punk' + e[0].toString().padStart(4, '0') + '.png'" :style="backgroundStyles[e[1] ? 3 : 1]"/>
+                              </b-link>
+                              <template #footer>
+                                <b-link @click="showModalPunk(e[0]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                                  <b-badge pill variant="info">{{ e[0] }}</b-badge>
+                                </b-link>
+                            </template>
+                            </b-card>
+                          </span>
+                        </b-card-group>
+                      </font>
+                    </template>
+                    <template #cell(v2)="data">
+                      <b-badge v-if="data.item[2].length > 0" pill variant="secondary">{{ data.item[2].length }}</b-badge>
+                      <font size="-1">
+                        <b-card-group deck class="m-1 ml-0 p-0">
+                          <span v-for="e of data.item[2]">
+                            <b-card body-class="p-0" footer-class="m-0 p-0" class="m-1 p-0 border-0" style="max-width: 6rem;">
+                              <b-link @click="showModalPunk(e[0]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                                <b-img-lazy width="100%" :src="'images/punks/punk' + e[0].toString().padStart(4, '0') + '.png'" :style="backgroundStyles[e[1] ? 4 : 2]"/>
+                              </b-link>
+                              <template #footer>
+                                <b-link @click="showModalPunk(e[0]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                                  <b-badge pill variant="info">{{ e[0] }}</b-badge>
+                                </b-link>
+                              </template>
+                            </b-card>
+                          </span>
+                        </b-card-group>
+                      </font>
+                    </template>
+                  </b-table>
+
+                  <!-- :CONFIG -->
+                  <b-card v-if="settings.tabIndex == 3 && !settings.showInfo" no-body no-header bg-variant="light" class="mx-0 my-1 p-1">
+                    <b-card-body class="m-1 ml-0 p-1">
+                      <b-form-group label-cols-lg="2" label="API Settings" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+                        <b-form-group label="CryptoCompare API Key:" label-for="cryptocompare-apikey" label-size="sm" label-cols-sm="2" label-align-sm="right" description="This key is stored in your local browser storage and is sent with CryptoCompare API requests for historical ETH/{ccy} rates. If not supplied, imports from CryptoCompare may fail if you reach your free quota" class="mx-0 my-1 p-0">
+                          <b-form-input type="text" size="sm" id="cryptocompare-apikey" v-model="settings.cryptoCompareAPIKey" @change="saveSettings" placeholder="See https://www.cryptocompare.com/ to obtain an API key" class="w-75"></b-form-input>
+                        </b-form-group>
+                      </b-form-group>
+                      <b-form-group label-cols-lg="2" label="Reporting Currency" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+                        <b-form-group label="Currency:" label-for="reporting-currency" label-size="sm" label-cols-sm="2" label-align-sm="right" :description="'Used in https://min-api.cryptocompare.com/data/v2/histoday?fsym=ETH&tsym={ccy}&limit=2000. Changes take effect after a re-sync'" class="mx-0 my-1 p-0">
+                          <b-form-select size="sm" id="reporting-currency" v-model="settings.reportingCurrency" @change="saveSettings" :options="reportingCurrencyOptions" class="w-25"></b-form-select>
+                        </b-form-group>
+                      </b-form-group>
+                      <b-form-group label-cols-lg="2" label="Other Settings" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+                        <b-form-group label="Local or UTC Time:" label-for="reporting-currency" label-size="sm" label-cols-sm="2" label-align-sm="right" class="mx-0 my-1 p-0">
+                          <b-form-select size="sm" id="reporting-datetime" v-model="settings.reportingDateTime" @change="saveSettings" :options="reportingDateTimeOptions" class="w-25"></b-form-select>
+                        </b-form-group>
+                      </b-form-group>
+                    </b-card-body>
+                  </b-card>
+
+                </b-col>
+              </b-row>
+            </b-card-text>
+          </b-card>
+        </b-card>
+
+        <b-card no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
+          <div class="d-flex flex-wrap m-0 p-0">
+            <div class="ml-0 mt-1 pl-1">
+              <font v-if="connected" size="-2">
+                <!-- <b-link v-if="coinbase" :href="'https://etherscan.io/address/' + coinbase" v-b-popover.hover.bottom="'Coinbase'" target="_blank">
+                  {{ coinbase.substring(0, 10) }}
+                </b-link> -->
+                <b-link v-if="chainId" :href="'https://etherscan.io/'" v-b-popover.hover.bottom="'Network'" target="_blank">
+                  {{ chainId == '1' ? 'Mainnet' : 'Unsupported' }}
+                </b-link>
+                <b-link v-if="blockNumber" :href="'https://etherscan.io/block/' + blockNumber" v-b-popover.hover.bottom="'Latest block'" target="_blank">
+                  {{ '#' + commify0(blockNumber) }}
+                </b-link>
+                <b-link v-if="blockNumber" :href="'https://etherscan.io/block/' + blockNumber" v-b-popover.hover.bottom="formatTimestamp(timestamp)" target="_blank">
+                  {{ formatTimeDiff(timestamp) }}
+                </b-link>
+              </font>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div class="mt-0 pl-1 pr-1">
+              gm, and enjoy! <i>ensutils</i> &copy; Bok Consulting Pty Ltd 2023
+            </div>
+          </div>
+        </b-card>
+      </b-container>
+    </div>
+
+    <script>
+      window.app = new Vue({
+        el: '#app',
+        // --- DATA ---
+        data: {
+          connected: false,
+          chainId: null,
+          coinbase: null,
+          blockNumber: null,
+          timestamp: null,
+
+          settings: {
+            tabIndex: 0,
+            showFilter: false,
+            showInfo: false,
+            filterByIds: null,
+            filterByOwners: null,
+            filters: {},
+            selectedContracts: [],
+            cryptoCompareAPIKey: null,
+            reportingCurrency: "USD",
+            reportingDateTime: 0,
+            punksTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 100,
+              sortOption: 'punkidasc',
+            },
+            activityTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 100,
+              sortOption: 'txorderdsc',
+            },
+            ownersTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'count2dsc',
+            },
+            editAccounts: false,
+            accounts: {},
+            version: 13,
+          },
+
+          sync: {
+            section: null,
+            total: null,
+            completed: null,
+            halt: false,
+          },
+          blockTimestamps: {},
+          exchangeRates: {},
+          addressToIndex: {},
+          indexToAddress: [],
+          txHashToIndex: {},
+          indexToTxHash: [],
+          indexToName: {},
+          txs: [],
+          tokens: {},
+          offers: { "1": {}, "2": {} },
+          v2Bids: {},
+          events: {},
+          modalPunk: {
+            punkId: null,
+            v1: {
+              ownerIndex: null,
+              wrapped: false,
+            },
+            v2: {
+              ownerIndex: null,
+              wrapped: false,
+            },
+            attributes: {},
+          },
+          modalAddress: {
+            addressIndex: null,
+            address: null,
+            name: null,
+          },
+          modalTx: {
+            txHashIndex: null,
+            txHash: null,
+            tx: null,
+            txReceipt: null,
+            timestamp: null,
+            exchangeRate: null,
+            txFee: null,
+            txFeeInReportingCurrency: null,
+          },
+          punksSortOptions: [
+            { value: 'punkidasc', text: '▲ PunkId' },
+            { value: 'punkiddsc', text: '▼ PunkId' },
+          ],
+          activitySortOptions: [
+            { value: 'txorderasc', text: '▲ TxOrder' },
+            { value: 'txorderdsc', text: '▼ TxOrder' },
+          ],
+          ownersSortOptions: [
+            { value: 'count1asc', text: '▲ Σv1 Punks' },
+            { value: 'count1dsc', text: '▼ Σv1 Punks' },
+            { value: 'count2asc', text: '▲ Σv2 Punks' },
+            { value: 'count2dsc', text: '▼ Σv2 Punks' },
+            { value: 'count12asc', text: '▲ Σv1 & v2 Punks' },
+            { value: 'count12dsc', text: '▼ Σv1 & v2 Punks' },
+            { value: 'accountasc', text: '▲ Account' },
+            { value: 'accountdsc', text: '▼ Account' },
+          ],
+          contractOptions: [
+            { text: 'v1', value: 1 },
+            { text: 'v2', value: 2 },
+            { text: 'w1', value: 3 },
+            { text: 'w2', value: 4 }
+          ],
+          pageSizes: [
+            { value: 5, text: '5' },
+            { value: 10, text: '10' },
+            { value: 25, text: '25' },
+            { value: 50, text: '50' },
+            { value: 100, text: '100' },
+            { value: 500, text: '500' },
+            { value: 1000, text: '1k' },
+            { value: 2500, text: '2.5k' },
+            { value: 10000, text: '10k' },
+          ],
+          punksFields: [
+            { key: 'punkId', label: 'PunkId', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'image', label: 'Image', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'v1Owner', label: 'v1', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'v1Wrapped', label: '', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'v2Owner', label: 'v2', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'v2Wrapped', label: '', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'attribute', label: 'Attributes', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'text-left' },
+          ],
+          activityFields: [
+            { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+            { key: 'timestamp', label: 'When', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
+            { key: 'action', label: 'Action', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
+            { key: 'from', label: 'From', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
+            { key: 'to', label: 'To', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
+            { key: 'punk', label: 'Punk', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'value', label: 'Value', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'events', label: 'Events', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'text-left' },
+          ],
+          ownersFields: [
+            { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+            { key: 'owner', label: 'Owner', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'v1', label: 'v1', sortable: false, thStyle: 'width: 40%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'v2', label: 'v2', sortable: false, thStyle: 'width: 40%;', thClass: 'text-left', tdClass: 'text-left' },
+          ],
+          punkAttributesFields: [
+            { key: 'select', label: '', thStyle: 'width: 10%;' },
+            { key: 'attributeOption', label: 'Attribute' /*, sortable: true*/ },
+            { key: 'attributeTotal', label: 'Count', /*sortable: true,*/ thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
+          ],
+          functionCallParametersFields: [
+            { key: 'parameter', label: 'Parameter', sortable: false, thStyle: 'width: 40%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'type', label: 'Type', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'value', label: 'Value', sortable: false, thStyle: 'width: 50%;', thClass: 'text-left', tdClass: 'text-left' },
+          ],
+          eventLogFields: [
+            { key: 'logIndex', label: 'Log Index', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'contract', label: 'Contract', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'truncate' },
+            { key: 'name', label: 'Name', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'fields', label: 'Fields', sortable: false, thStyle: 'width: 50%;', thClass: 'text-left', tdClass: 'text-left' },
+          ],
+          indexToEventTypes: [
+            "Assign", // 0
+            "Transfer", // 1
+            "PunkTransfer", // 2
+            "PunkOffered", // 3
+            "PunkNoLongerForSale", // 4
+            "PunkBidEntered", // 5
+            "PunkBidWithdrawn", // 6
+            "PunkBought", // 7
+            "Approval", // 8
+            "ApprovalForAll", // 9
+            "OwnershipTransferred", // 10
+            "ProxyRegistered", // 11
+          ],
+          indexToTransactionTypes: [
+            "Reserve", // 0
+            "Claim", // 1
+            "Airdrop", // 2
+            "Transfer", // 3
+            "Offer", // 4
+            "RemoveOffer", // 5
+            "Purchase", // 6
+            "Bid", // 7
+            "RemoveBid", // 8
+            "AcceptBid", // 9
+            "Wrap", // 10
+            "Unwrap", // 11
+            "Approval", // 12
+            "ApprovalForAll", // 13
+            "OwnershipTransferred", // 14
+            "ProxyRegistered", // 15
+          ],
+          contracts: [
+            { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
+            { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
+            { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
+            { name: "WrappedCryptoPunks V2", address: WRAPPEDCRYPTOPUNKSV2ADDRESS, abi: WRAPPEDCRYPTOPUNKSV2ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
+          ],
+          backgroundStyles: [
+            "",
+            "background-color: #a599fd;", // V1
+            "background-color: #638596;", // V2
+            "background-color: #a599fd; border: 3px solid #00ff00;", // W1
+            "background-color: #638596; border: 3px solid #00ff00;", // W2
+          ],
+          // As supported by https://min-api.cryptocompare.com/data/v2/histoday?fsym=ETH&tsym={ccy}&limit=2000
+          reportingCurrencyOptions: [
+            { value: 'AUD', text: 'AUD' },
+            { value: 'CAD', text: 'CAD' },
+            { value: 'CHF', text: 'CHF' },
+            { value: 'EUR', text: 'EUR' },
+            { value: 'GBP', text: 'GBP' },
+            { value: 'JPY', text: 'JPY' },
+            { value: 'NZD', text: 'NZD' },
+            { value: 'USD', text: 'USD' },
+          ],
+          reportingDateTimeOptions: [
+            { value: 0, text: 'Local Time' },
+            { value: 1, text: 'UTC Time' },
+          ],
+          db: {
+            name: "cryptopunksdata088k",
+            version: 1,
+            schemaDefinition: {
+              cache: '&objectName',
+            },
+            updated: null,
+          },
+        },
+
+        // --- COMPUTED ---
+        computed: {
+          eventTypesToIndex() {
+            const results = {};
+            for (const [eventTypeIndex, eventType] of this.indexToEventTypes.entries()) {
+              results[eventType] = eventTypeIndex;
+            }
+            return results;
+          },
+          punkAttributes() {
+            return PUNKATTRIBUTES;
+          },
+          punkAttributesWithTokenIds() {
+            const collator = {};
+            for (const [punkId, punkAttribute] of this.punkAttributes.entries()) {
+              for (const attribute of punkAttribute) {
+                const trait_type = attribute.trait_type;
+                const value = attribute.value;
+                if (!collator[trait_type]) {
+                  collator[trait_type] = {};
+                }
+                if (!collator[trait_type][value]) {
+                  collator[trait_type][value] = [punkId];
+                } else {
+                  collator[trait_type][value].push(punkId);
+                }
+              }
+            }
+            const results = [];
+            for (const [attributeType, attributes] of Object.entries(collator)) {
+              const attributeList = [];
+              for (const [attribute, punks] of Object.entries(attributes)) {
+                attributeList.push({ attribute, punks });
+              }
+              attributeList.sort((a, b) => a.punks.length - b.punks.length);
+              results.push({ attributeType, attributeList });
+            }
+            results.sort((a, b) => ('' + a.attributeType).localeCompare(b.attributeType))
+            return results;
+          },
+          filteredPunkIds() {
+            let filteredIds = null;
+            if (this.settings.filterByIds) {
+              const searchIds = this.settings.filterByIds.split(/[, \t\n]+/).map(s => s.trim());
+              filteredIds = [];
+              for (s of searchIds) {
+                var range = s.match(/(\d+)-(\d+)/)
+                if (range != null) {
+                  for (let i = parseInt(range[1]); i <= parseInt(range[2]); i++) {
+                    if (i >= 0 && i < 10000) {
+                      filteredIds.push(i);
+                    }
+                  }
+                } else if (s >= 0 && s < 10000) {
+                  filteredIds.push(parseInt(s));
+                } else {
+                  if (s.match(/[a-zA-Z0-9 \-]{3,}/)) {
+                    const searchFor = s.toLowerCase();
+                    for (const attributeInfo of this.punkAttributesWithTokenIds) {
+                      for (const attribute of attributeInfo.attributeList) {
+                        if (attribute.attribute.indexOf(searchFor) == 0) {
+                          filteredIds = [...new Set([...filteredIds, ...attribute.punks])]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            const results = [];
+            if (Object.keys(this.settings.filters).length == 0) {
+              for (const [punkId, attributes] of this.punkAttributes.entries()) {
+                if (!filteredIds || filteredIds.includes(punkId)) {
+                  results.push(punkId);
+                }
+              }
+            } else {
+              let selectedTokenIds = [];
+              for (const [attributeType, attributeList] of Object.entries(this.settings.filters)) {
+                let thisAttributeTypeTokenIds = [];
+                for (const attribute of Object.keys(attributeList)) {
+                  for (const attributeInfo of this.punkAttributesWithTokenIds) {
+                    if (attributeInfo.attributeType == attributeType) {
+                      const tokenIds = attributeInfo.attributeList.filter(e => e.attribute == attribute).map(e => e.punks).flat();
+                      thisAttributeTypeTokenIds = [...thisAttributeTypeTokenIds, ...tokenIds];
+                      break;
+                    }
+                  }
+                }
+                if (selectedTokenIds.length == 0) {
+                  selectedTokenIds = thisAttributeTypeTokenIds;
+                } else {
+                  selectedTokenIds = selectedTokenIds.filter(tokenId => thisAttributeTypeTokenIds.includes(tokenId));
+                }
+              }
+              for (const punkId of selectedTokenIds) {
+                if (!filteredIds || filteredIds.includes(punkId)) {
+                  results.push(punkId);
+                }
+              }
+            }
+            return results;
+          },
+          ownerFilteredPunks() {
+            const w1Index = this.addressToIndex[WRAPPEDCRYPTOPUNKSV1ADDRESS];
+            const w2Index = this.addressToIndex[WRAPPEDCRYPTOPUNKSV2ADDRESS];
+            let filteredOwners = null;
+            if (this.settings.filterByOwners) {
+              const searchOwners = this.settings.filterByOwners.split(/[, \t\n]+/).map(s => new RegExp(s.toLowerCase().trim(), "i"));
+              filteredOwners = {};
+              for (s of searchOwners) {
+                for (const [index, name] of Object.entries(this.indexToName)) {
+                  if (s.test(name)) {
+                    filteredOwners[index] = name;
+                  }
+                }
+                for (const [index, address] of Object.entries(this.indexToAddress)) {
+                  if (s.test(address)) {
+                    filteredOwners[index] = address;
+                  }
+                }
+              }
+            }
+            const results = [];
+            for (let punkId of this.filteredPunkIds) {
+              const attributes = this.punkAttributes[punkId];
+              const v1OwnerIndex = this.tokens[1] && this.tokens[1][punkId] || null;
+              const v2OwnerIndex = this.tokens[2] && this.tokens[2][punkId] || null;
+              const w1OwnerIndex = this.tokens[3] && this.tokens[3][punkId] || null;
+              const w2OwnerIndex = this.tokens[4] && this.tokens[4][punkId] || null;
+              let v1 = {};
+              if (v1OwnerIndex != null && v1OwnerIndex == w1Index) {
+                v1.ownerIndex = w1OwnerIndex || 0;
+                v1.wrapped = true;
+              } else {
+                v1.ownerIndex = v1OwnerIndex;
+                v1.wrapped = false;
+              }
+              v1.offer = this.offers[1] && this.offers[1][punkId] || null;
+              let v2 = {};
+              if (v2OwnerIndex != null && v2OwnerIndex == w2Index) {
+                v2.ownerIndex = w2OwnerIndex;
+                v2.wrapped = true;
+              } else {
+                v2.ownerIndex = v2OwnerIndex;
+                v2.wrapped = false;
+              }
+              v2.offer = this.offers[2] && this.offers[2][punkId] || null;
+              v2.bid = this.v2Bids[punkId] || null;
+              if (!filteredOwners || (v1.ownerIndex in filteredOwners || v2.ownerIndex in filteredOwners)) {
+                results.push({ punkId, v1, v2, attributes });
+              }
+            }
+
+            return results;
+          },
+          filteredSortedPunks() {
+            let results = this.ownerFilteredPunks;
+            if (this.settings.punksTable.sortOption == 'punkidasc') {
+              results.sort((a, b) => {
+                return a.punkId - b.punkId;
+              });
+            } else if (this.settings.punksTable.sortOption == 'punkiddsc') {
+              results.sort((a, b) => {
+                return b.punkId - a.punkId;
+              });
+            }
+            return results;
+          },
+          pagedFilteredSortedPunks() {
+            return this.filteredSortedPunks.slice((this.settings.punksTable.currentPage - 1) * this.settings.punksTable.pageSize, this.settings.punksTable.currentPage * this.settings.punksTable.pageSize);
+          },
+
+          filteredActivity() {
+            const results = [];
+            let filteredIds = {};
+            for (const punkId of this.filteredPunkIds) {
+              filteredIds[punkId] = true;
+            }
+            const selectedContractFilter = (this.settings.selectedContracts.length == 0 || this.settings.selectedContracts.length == 4) ? null : this.settings.selectedContracts;
+
+            let ownerIndexMap = null;
+            if (this.settings.filterByOwners) {
+              const searchOwners = this.settings.filterByOwners ? this.settings.filterByOwners.split(/[, \t\n]+/).map(s => new RegExp(s.toLowerCase(), "i")) : [];
+              ownerIndexMap = {};
+              for (const [index, name] of Object.entries(this.indexToName)) {
+                for (const searchItem of searchOwners) {
+                  if (searchItem.test(name)) {
+                    ownerIndexMap[index] = name;
+                  }
+                }
+              }
+              for (const [index, address] of Object.entries(this.indexToAddress)) {
+                for (const searchItem of searchOwners) {
+                  if (searchItem.test(address)) {
+                    ownerIndexMap[index] = address;
+                  }
+                }
+              }
+            }
+
+            for (const tx of this.txs) {
+              let include = true;
+              if (selectedContractFilter) {
+                include = false;
+                for (let contractIndex of tx[6]) {
+                  if (selectedContractFilter.includes(contractIndex)) {
+                    include = true;
+                    break;
+                  }
+                }
+              }
+              if (include && filteredIds) {
+                include = false;
+                const punkId = tx[5] && tx[5][3] && parseInt(tx[5][3]);
+                if (punkId in filteredIds) {
+                  include = true;
+                }
+              }
+              if (include && ownerIndexMap) {
+                include = false;
+                const [txType, fromIndex, toIndex] = [tx[5][0], tx[5][1], tx[5][2]];
+                if ((txType >= 3 && (fromIndex in ownerIndexMap)) || (txType != 4 && (toIndex in ownerIndexMap))) {
+                  include = true;
+                }
+              }
+              if (include) {
+                results.push(tx);
+              }
+            }
+            // console.log(moment().format("HH:mm:ss") + " filteredActivity - results: " + JSON.stringify(results.slice(0, 10)) + ", ...");
+            return results;
+          },
+          filteredSortedActivity() {
+            let results = this.filteredActivity;
+            if (this.settings.activityTable.sortOption == 'txorderasc') {
+              results.sort((a, b) => {
+                if (a[1] == b[1]) {
+                  if (a[2] == b[2]) {
+                    return a[3] - b[3];
+                  } else {
+                    return a[2] - b[2];
+                  }
+                } else {
+                  return a[1] - b[1];
+                }
+              });
+            } else if (this.settings.activityTable.sortOption == 'txorderdsc') {
+              results.sort((a, b) => {
+                if (a[1] == b[1]) {
+                  if (a[2] == b[2]) {
+                    return b[3] - a[3];
+                  } else {
+                    return b[2] - a[2];
+                  }
+                } else {
+                  return b[1] - a[1];
+                }
+              });
+            }
+            return results;
+          },
+          pagedFilteredSortedActivity() {
+            return this.filteredSortedActivity.slice((this.settings.activityTable.currentPage - 1) * this.settings.activityTable.pageSize, this.settings.activityTable.currentPage * this.settings.activityTable.pageSize);
+          },
+
+          owners() {
+            const w1Index = this.addressToIndex[WRAPPEDCRYPTOPUNKSV1ADDRESS];
+            const w2Index = this.addressToIndex[WRAPPEDCRYPTOPUNKSV2ADDRESS];
+            const results = [];
+            const punks = this.filteredPunks;
+            const ownersByPunkIds = {};
+            const punkIdsByOwnerIndexes = {};
+            for (const punkId of this.filteredPunkIds) {
+              const v1OwnerIndex = this.tokens[1] && this.tokens[1][punkId] || null;
+              const v2OwnerIndex = this.tokens[2] && this.tokens[2][punkId] || null;
+              const w1OwnerIndex = this.tokens[3] && this.tokens[3][punkId] || null;
+              const w2OwnerIndex = this.tokens[4] && this.tokens[4][punkId] || null;
+              if (w1OwnerIndex != null) {
+                if (!(w1OwnerIndex in punkIdsByOwnerIndexes)) {
+                  punkIdsByOwnerIndexes[w1OwnerIndex] = {};
+                }
+                if (!(punkId in punkIdsByOwnerIndexes[w1OwnerIndex])) {
+                  punkIdsByOwnerIndexes[w1OwnerIndex][punkId] = {};
+                }
+                punkIdsByOwnerIndexes[w1OwnerIndex][punkId][1] = true;
+              } else if (v1OwnerIndex != null) {
+                if (!(v1OwnerIndex in punkIdsByOwnerIndexes)) {
+                  punkIdsByOwnerIndexes[v1OwnerIndex] = {};
+                }
+                if (!(punkId in punkIdsByOwnerIndexes[v1OwnerIndex])) {
+                  punkIdsByOwnerIndexes[v1OwnerIndex][punkId] = {};
+                }
+                punkIdsByOwnerIndexes[v1OwnerIndex][punkId][1] = false;
+              }
+              if (w2OwnerIndex != null) {
+                if (!(w2OwnerIndex in punkIdsByOwnerIndexes)) {
+                  punkIdsByOwnerIndexes[w2OwnerIndex] = {};
+                }
+                if (!(punkId in punkIdsByOwnerIndexes[w2OwnerIndex])) {
+                  punkIdsByOwnerIndexes[w2OwnerIndex][punkId] = {};
+                }
+                punkIdsByOwnerIndexes[w2OwnerIndex][punkId][2] = true;
+              } else if (v2OwnerIndex != null) {
+                if (!(v2OwnerIndex in punkIdsByOwnerIndexes)) {
+                  punkIdsByOwnerIndexes[v2OwnerIndex] = {};
+                }
+                if (!(punkId in punkIdsByOwnerIndexes[v2OwnerIndex])) {
+                  punkIdsByOwnerIndexes[v2OwnerIndex][punkId] = {};
+                }
+                punkIdsByOwnerIndexes[v2OwnerIndex][punkId][2] = false;
+              }
+            }
+            for (const [ownerIndex, ownerData] of Object.entries(punkIdsByOwnerIndexes)) {
+              const v1Punks = [];
+              const v2Punks = [];
+              for (const [punkId, ownerInfo] of Object.entries(ownerData)) {
+                for (const [version, wrapped] of Object.entries(ownerInfo)) {
+                  if (version == 1) {
+                    v1Punks.push([parseInt(punkId), wrapped]);
+                  } else {
+                    v2Punks.push([parseInt(punkId), wrapped]);
+                  }
+                }
+              }
+              results.push([parseInt(ownerIndex), v1Punks, v2Punks]);
+            }
+            return results;
+          },
+          filteredOwners() {
+            let stage1Results = this.owners;
+            let results;
+            if (this.settings.filterByOwners) {
+              const searchOwners = this.settings.filterByOwners ? this.settings.filterByOwners.split(/[, \t\n]+/).map(s => new RegExp(s.toLowerCase(), "i")) : [];
+              results = [];
+              const ownerIndexMap = {};
+              for (const [index, name] of Object.entries(this.indexToName)) {
+                for (const searchItem of searchOwners) {
+                  if (searchItem.test(name)) {
+                    ownerIndexMap[index] = name;
+                  }
+                }
+              }
+              for (const [index, address] of Object.entries(this.indexToAddress)) {
+                for (const searchItem of searchOwners) {
+                  if (searchItem.test(address)) {
+                    ownerIndexMap[index] = address;
+                  }
+                }
+              }
+              for (const row of stage1Results) {
+                if (row[0] in ownerIndexMap) {
+                  results.push(row);
+                }
+              }
+            } else {
+              results = stage1Results;
+            }
+            return results;
+          },
+          filteredSortedOwners() {
+            let results = this.filteredOwners;
+            if (this.settings.ownersTable.sortOption == 'count1asc') {
+              results.sort((a, b) => {
+                return a[1].length - b[1].length;
+              });
+            } else if (this.settings.ownersTable.sortOption == 'count1dsc') {
+              results.sort((a, b) => {
+                return b[1].length - a[1].length;
+              });
+            } else if (this.settings.ownersTable.sortOption == 'count2asc') {
+              results.sort((a, b) => {
+                return a[2].length - b[2].length;
+              });
+            } else if (this.settings.ownersTable.sortOption == 'count2dsc') {
+              results.sort((a, b) => {
+                return b[2].length - a[2].length;
+              });
+            } else if (this.settings.ownersTable.sortOption == 'count12asc') {
+              results.sort((a, b) => {
+                return a[1].length + a[2].length - b[1].length - b[2].length;
+              });
+            } else if (this.settings.ownersTable.sortOption == 'count12dsc') {
+              results.sort((a, b) => {
+                return b[1].length + b[2].length - a[1].length - a[2].length;
+              });
+            } else if (this.settings.ownersTable.sortOption == 'accountasc') {
+              results.sort((a, b) => {
+                const namea = this.indexToName[a[0]] || this.indexToAddress[a[0]] || "";
+                const nameb = this.indexToName[b[0]] || this.indexToAddress[b[0]] || "";
+                return namea.localeCompare(nameb);
+              });
+            } else if (this.settings.ownersTable.sortOption == 'accountdsc') {
+              results.sort((a, b) => {
+                const namea = this.indexToName[a[0]] || this.indexToAddress[a[0]] || "";
+                const nameb = this.indexToName[b[0]] || this.indexToAddress[b[0]] || "";
+                return nameb.localeCompare(namea);
+              });
+            }
+            // console.log(moment().format("HH:mm:ss") + " filteredSortedOwners - results: " + JSON.stringify(results.slice(0, 10)) + ", ...");
+            return results;
+          },
+          pagedFilteredSortedOwners() {
+            return this.filteredSortedOwners.slice((this.settings.ownersTable.currentPage - 1) * this.settings.ownersTable.pageSize, this.settings.ownersTable.currentPage * this.settings.ownersTable.pageSize);
+          },
+        },
+
+        // --- METHODS ---
+        methods: {
+          slugToTitle(slug) {
+            var words = slug.toString().split("-");
+            return words.map(function(word) {
+              if (word == "3d" || word == "vr") {
+                return word.toUpperCase();
+              } else {
+                return word.charAt(0).toUpperCase() + word.substring(1).toLowerCase();
+              }
+            }).join(' ');
+          },
+
+          showModalPunk(punkId) {
+            // console.log(moment().format("HH:mm:ss") + " showModalPunk - punkId: " + punkId);
+            this.modalPunk.punkId = punkId;
+            const w1Index = this.addressToIndex[WRAPPEDCRYPTOPUNKSV1ADDRESS];
+            const w2Index = this.addressToIndex[WRAPPEDCRYPTOPUNKSV2ADDRESS];
+            const v1OwnerIndex = this.tokens[1] && this.tokens[1][punkId] || null;
+            const v2OwnerIndex = this.tokens[2] && this.tokens[2][punkId] || null;
+            const w1OwnerIndex = this.tokens[3] && this.tokens[3][punkId] || null;
+            const w2OwnerIndex = this.tokens[4] && this.tokens[4][punkId] || null;
+            if (v1OwnerIndex == w1Index) {
+              this.modalPunk.v1.ownerIndex = w1OwnerIndex || 0;
+              this.modalPunk.v1.wrapped = true;
+            } else {
+              this.modalPunk.v1.ownerIndex = v1OwnerIndex;
+              this.modalPunk.v1.wrapped = false;
+            }
+            if (v2OwnerIndex == w2Index) {
+              this.modalPunk.v2.ownerIndex = w2OwnerIndex;
+              this.modalPunk.v2.wrapped = true;
+            } else {
+              this.modalPunk.v2.ownerIndex = v2OwnerIndex;
+              this.modalPunk.v2.wrapped = false;
+            }
+            this.modalPunk.attributes = this.punkAttributes[punkId];
+            this.$bvModal.show('modal-punk');
+          },
+
+          showModalAddress(addressIndex) {
+            this.modalAddress.addressIndex = addressIndex;
+            this.modalAddress.address = this.indexToAddress[addressIndex];
+            this.modalAddress.name = this.indexToName[addressIndex] || null;
+            console.log(moment().format("HH:mm:ss") + " showModalAddress: " + addressIndex + " => " + JSON.stringify(this.modalAddress));
+            this.$bvModal.show('modal-address');
+          },
+
+          async showModalTx(txHashIndex) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            this.modalTx = await getTxInfo({ txHashIndex, txHash: this.indexToTxHash[txHashIndex] }, provider, this.exchangeRates);
+            this.$bvModal.show('modal-tx');
+            // console.log(moment().format("HH:mm:ss") + " showModalTx: " + txHashIndex + " => " + JSON.stringify(this.modalTx, null, 2));
+          },
+
+          async syncIt(devMode) {
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            this.coinbase = await signer.getAddress();
+            localStorage.cryptoPunksDataCoinbase = this.coinbase;
+            const network = await provider.getNetwork();
+            localStorage.cryptoPunksDataChainId = network.chainId;
+            const block = await provider.getBlock();
+            const latestBlockNumber = block && block.number || null;
+            console.log(moment().format("HH:mm:ss") + " syncIt - latestBlockNumber: " + latestBlockNumber + ", chainId: " + this.chainId);
+            let newAddressIndexes = [];
+            if (!devMode) {
+              newAddressIndexes = await this.syncCryptoPunksEvents(db, provider, latestBlockNumber);
+            }
+            if (!devMode) {
+              await this.syncENSNames(newAddressIndexes, db, provider);
+            }
+            if (!devMode) {
+              await this.syncBlockTimestamps(db);
+            }
+            if (!devMode) {
+              await this.syncExchangeRates(db);
+            }
+            if (!devMode) {
+              await this.processData(db);
+            }
+            if (!devMode) {
+              await this.loadCurrentData();
+            }
+            this.sync.section = null;
+            this.sync.halt = false;
+          },
+
+          async syncCryptoPunksEvents(db, provider, latestBlockNumber) {
+            // v1 v2 event Assign(address indexed to, uint256 punkIndex);
+            // v1 v2 event Transfer(address indexed from, address indexed to, uint256 value);
+            // v1 v2 event PunkTransfer(address indexed from, address indexed to, uint256 punkIndex);
+            // v1 v2 event PunkOffered(uint indexed punkIndex, uint minValue, address indexed toAddress);
+            // v1 v2 event PunkNoLongerForSale(uint indexed punkIndex);
+            //    v2 event PunkBidEntered(uint indexed punkIndex, uint value, address indexed fromAddress);
+            //    v2 event PunkBidWithdrawn(uint indexed punkIndex, uint value, address indexed fromAddress);
+            // v1 v2 event PunkBought(uint indexed punkIndex, uint value, address indexed fromAddress, address indexed toAddress);
+            // w1 w2 event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+            // w1 w2 event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+            // w1 w2 event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+            // w1 w2 event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+            //    w2 event Paused(address account);
+            //    w2 event Unpaused(address account);
+            //    w2 event ProxyRegistered(address user, address proxy);
+            const CONFIRMATIONS = 100;
+            let indexToAddress = [];
+            let addressToIndex = {};
+            const indexToAddressDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToAddress").toArray();
+            if (indexToAddressDataItems.length == 1) {
+              indexToAddress = indexToAddressDataItems[0].object;
+              for (const [index, address] of indexToAddress.entries()) {
+                addressToIndex[address] = index;
+              }
+            }
+            let indexToTxHash = [];
+            let txHashToIndex = {};
+            const indexToTxHashDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToTxHash").toArray();
+            if (indexToTxHashDataItems.length == 1) {
+              indexToTxHash = indexToTxHashDataItems[0].object;
+              for (const [index, txHash] of indexToTxHash.entries()) {
+                txHashToIndex[txHash] = index;
+              }
+            }
+            const newAddressIndexes = [];
+            for (const address of [ADDRESS0, CRYPTOPUNKSV1ADDRESS, CRYPTOPUNKSV2ADDRESS, WRAPPEDCRYPTOPUNKSV1ADDRESS, WRAPPEDCRYPTOPUNKSV2ADDRESS, this.coinbase]) {
+              if (!(address in addressToIndex)) {
+                addressToIndex[address] = indexToAddress.length;
+                newAddressIndexes.push(indexToAddress.length);
+                indexToAddress.push(address);
+              }
+            }
+            for (const address of Object.keys(CUSTOMNAMES)) {
+              if (!(address in addressToIndex)) {
+                addressToIndex[address] = indexToAddress.length;
+                newAddressIndexes.push(indexToAddress.length);
+                indexToAddress.push(address);
+              }
+            }
+            for (const process of this.contracts) {
+              const contract = new ethers.Contract(process.address, process.abi, provider);
+              if (!(process.address in addressToIndex)) {
+                addressToIndex[process.address] = indexToAddress.length;
+                indexToAddress.push(process.address);
+              }
+              let events = {};
+              let total = 0;
+              let newEvents = 0;
+              function processLogs(fromBlock, toBlock, logs) {
+                total = parseInt(total) + logs.length;
+                console.log(moment().format("HH:mm:ss") + " syncCryptoPunksEvents " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
+                for (const event of logs) {
+                  if (!event.removed) {
+                    const logData = contract.interface.parseLog(event);
+                    const txHash = event.transactionHash;
+                    if (!(txHash in txHashToIndex)) {
+                      txHashToIndex[txHash] = indexToTxHash.length;
+                      indexToTxHash.push(txHash);
+                    }
+                    const txHashIndex = txHashToIndex[txHash];
+                    const blockNumber = event.blockNumber;
+                    const txIndex = event.transactionIndex;
+                    const logIndex = event.logIndex;
+                    const eventType = logData.eventFragment.name;
+                    const eventTypeIndex = t.eventTypesToIndex[eventType];
+                    let record = null;
+                    if (eventType == "Assign") {
+                      const [to, punkIndex] = logData.args;
+                      if (!(to in addressToIndex)) {
+                        addressToIndex[to] = indexToAddress.length;
+                        indexToAddress.push(to);
+                      }
+                      const toIndex = addressToIndex[to];
+                      record = [eventTypeIndex, toIndex, parseInt(punkIndex)];
+                    } else if (eventType == "Transfer") {
+                      const [from, to, value] = logData.args;
+                      for (const address of [from, to]) {
+                        if (!(address in addressToIndex)) {
+                          addressToIndex[address] = indexToAddress.length;
+                          newAddressIndexes.push(indexToAddress.length);
+                          indexToAddress.push(address);
+                        }
+                      }
+                      const fromIndex = addressToIndex[from];
+                      const toIndex = addressToIndex[to];
+                      record = [ eventTypeIndex, fromIndex, toIndex, parseInt(value) ];
+                    } else if (eventType == "PunkTransfer") {
+                      const [from, to, punkIndex] = logData.args;
+                      for (const address of [from, to]) {
+                        if (!(address in addressToIndex)) {
+                          addressToIndex[address] = indexToAddress.length;
+                          newAddressIndexes.push(indexToAddress.length);
+                          indexToAddress.push(address);
+                        }
+                      }
+                      const fromIndex = addressToIndex[from];
+                      const toIndex = addressToIndex[to];
+                      record = [ eventTypeIndex, fromIndex, toIndex, parseInt(punkIndex)];
+                    } else if (eventType == "PunkOffered") {
+                      const [punkIndex, minValue, toAddress] = logData.args;
+                      if (!(toAddress in addressToIndex)) {
+                        addressToIndex[toAddress] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(toAddress);
+                      }
+                      const toAddressIndex = addressToIndex[toAddress];
+                      record = [ eventTypeIndex, parseInt(punkIndex), minValue.toString(), toAddressIndex ];
+                    } else if (eventType == "PunkNoLongerForSale") {
+                      const [punkIndex] = logData.args;
+                      record = [ eventTypeIndex, parseInt(punkIndex) ];
+                    } else if (eventType == "PunkBidEntered") {
+                      const [punkIndex, value, fromAddress] = logData.args;
+                      if (!(fromAddress in addressToIndex)) {
+                        addressToIndex[fromAddress] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(fromAddress);
+                      }
+                      const fromAddressIndex = addressToIndex[fromAddress];
+                      record = [ eventTypeIndex, parseInt(punkIndex), value.toString(), fromAddressIndex ];
+                    } else if (eventType == "PunkBidWithdrawn") {
+                      const [punkIndex, value, fromAddress] = logData.args;
+                      if (!(fromAddress in addressToIndex)) {
+                        addressToIndex[fromAddress] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(fromAddress);
+                      }
+                      const fromAddressIndex = addressToIndex[fromAddress];
+                      record = [ eventTypeIndex, parseInt(punkIndex), value.toString(), fromAddressIndex ];
+                    } else if (eventType == "PunkBought") {
+                      const [punkIndex, value, fromAddress, toAddress] = logData.args;
+                      for (const address of [fromAddress, toAddress]) {
+                        if (!(address in addressToIndex)) {
+                          addressToIndex[address] = indexToAddress.length;
+                          newAddressIndexes.push(indexToAddress.length);
+                          indexToAddress.push(address);
+                        }
+                      }
+                      const fromAddressIndex = addressToIndex[fromAddress];
+                      const toAddressIndex = addressToIndex[toAddress];
+                      record = [ eventTypeIndex, parseInt(punkIndex), value.toString(), fromAddressIndex, toAddressIndex ];
+                    } else if (eventType == "OwnershipTransferred") {
+                      const [previousOwner, newOwner] = logData.args;
+                      for (const address of [previousOwner, newOwner]) {
+                        if (!(address in addressToIndex)) {
+                          addressToIndex[address] = indexToAddress.length;
+                          newAddressIndexes.push(indexToAddress.length);
+                          indexToAddress.push(address);
+                        }
+                      }
+                      const previousOwnerIndex = addressToIndex[previousOwner];
+                      const newOwnerIndex = addressToIndex[newOwner];
+                      record = [ eventTypeIndex, previousOwnerIndex, newOwnerIndex ];
+                    } else if (eventType == "Approval") {
+                      const [owner, approved, tokenId] = logData.args;
+                      for (const address of [owner, approved]) {
+                        if (!(address in addressToIndex)) {
+                          addressToIndex[address] = indexToAddress.length;
+                          newAddressIndexes.push(indexToAddress.length);
+                          indexToAddress.push(address);
+                        }
+                      }
+                      const ownerIndex = addressToIndex[owner];
+                      const approvedIndex = addressToIndex[approved];
+                      record = [ eventTypeIndex, ownerIndex, approvedIndex, parseInt(tokenId) ];
+                    } else if (eventType == "ApprovalForAll") {
+                      const [owner, operator, approved] = logData.args;
+                      for (const address of [owner, operator]) {
+                        if (!(address in addressToIndex)) {
+                          addressToIndex[address] = indexToAddress.length;
+                          newAddressIndexes.push(indexToAddress.length);
+                          indexToAddress.push(address);
+                        }
+                      }
+                      const ownerIndex = addressToIndex[owner];
+                      const operatorIndex = addressToIndex[operator];
+                      record = [ eventTypeIndex, ownerIndex, operatorIndex, approved ];
+                    } else if (eventType == "Paused") {
+                      const [account] = logData.args;
+                      if (!(account in addressToIndex)) {
+                        addressToIndex[account] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(fromAddress);
+                      }
+                      const accountIndex = addressToIndex[account];
+                      record = [ eventTypeIndex, accountIndex ];
+                    } else if (eventType == "Unpaused") {
+                      const [account] = logData.args;
+                      if (!(account in addressToIndex)) {
+                        addressToIndex[account] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(fromAddress);
+                      }
+                      const accountIndex = addressToIndex[account];
+                      record = [ eventTypeIndex, accountIndex ];
+
+                    } else if (eventType == "ProxyRegistered") {
+                      const [user, proxy] = logData.args;
+                      for (const address of [user, proxy]) {
+                        if (!(address in addressToIndex)) {
+                          addressToIndex[address] = indexToAddress.length;
+                          newAddressIndexes.push(indexToAddress.length);
+                          indexToAddress.push(address);
+                        }
+                      }
+                      const userIndex = addressToIndex[user];
+                      const proxyIndex = addressToIndex[proxy];
+                      record = [ eventTypeIndex, userIndex, proxyIndex ];
+
+                    } else {
+                      console.log("--- UNKNOWN eventType: " + eventType + " ---");
+                    }
+                    console.log(moment().format("HH:mm:ss") + " syncCryptoPunksEvents " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
+                    if (record) {
+                      const confirmations = latestBlockNumber - blockNumber;
+                      if (!(blockNumber in events)) {
+                        events[blockNumber] = {};
+                      }
+                      if (!(txIndex in events[blockNumber])) {
+                        events[blockNumber][txIndex] = [ txHashIndex, {} ];
+                      }
+                      if (!(logIndex in events[blockNumber][txIndex][1])) {
+                        events[blockNumber][txIndex][1][logIndex] = record;
+                        newEvents++;
+                      }
+                    }
+                  }
+                }
+              }
+              const t = this;
+              async function getLogs(fromBlock, toBlock, processLogs, section) {
+                if (!t.sync.halt) {
+                  try {
+                    const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
+                    const eventLogs = await provider.getLogs(filter);
+                    processLogs(fromBlock, toBlock, eventLogs);
+                    t.sync.section = section;
+                    t.sync.completed = toBlock;
+                  } catch (e) {
+                    const mid = parseInt((fromBlock + toBlock) / 2);
+                    await getLogs(fromBlock, mid, processLogs, section);
+                    await getLogs(parseInt(mid) + 1, toBlock, processLogs, section);
+                  }
+                }
+              }
+              const eventsDataItems = await db.cache.where("objectName").equals(this.chainId + "_" + process.address + "_events").toArray();
+              if (eventsDataItems.length == 1) {
+                const storedLatestBlockNumber = eventsDataItems[0].object.latestBlockNumber;
+                events = eventsDataItems[0].object.events;
+                Object.keys(events).forEach(function (key) {
+                  const confirmations = storedLatestBlockNumber - key;
+                  if (confirmations < CONFIRMATIONS) {
+                    console.log(moment().format("HH:mm:ss") + " syncCryptoPunksEvents - Deleting low confirmations log events: " + key + " => " + confirmations + " " + JSON.stringify(events[key]));
+                    delete events[key];
+                  }
+                });
+              }
+              const blockNumbers = Object.keys(events).sort((a, b) => { return b - a });
+              const startBlock = blockNumbers.length > 0 ? parseInt(blockNumbers[0]) + 1: process.deploymentBlockNumber;
+              this.sync.total = latestBlockNumber;
+              this.sync.completed = startBlock;
+              await getLogs(startBlock, latestBlockNumber, processLogs, process.name);
+              Vue.set(this, "addressToIndex", addressToIndex);
+              Vue.set(this, "indexToAddress", indexToAddress);
+              await db.cache.put({ objectName: this.chainId + "_indexToAddress", object: indexToAddress }).then (function() {
+              }).catch(function(error) {
+                console.log("error: " + error);
+              });
+              Vue.set(this, "txHashToIndex", txHashToIndex);
+              Vue.set(this, "indexToTxHash", indexToTxHash);
+              await db.cache.put({ objectName: this.chainId + "_indexToTxHash", object: indexToTxHash }).then (function() {
+              }).catch(function(error) {
+                console.log("error: " + error);
+              });
+              await db.cache.put({ objectName: this.chainId + "_" + process.address + "_events", object: { latestBlockNumber, events } }).then (function() {
+              }).catch(function(error) {
+                console.log("error: " + error);
+              });
+            }
+            return newAddressIndexes;
+          },
+
+          async syncBlockTimestamps(db) {
+            console.log(moment().format("HH:mm:ss") + " syncBlockTimestamps");
+            // TODO: Low priority - Handle blockTimestamp entries with unconfirmed blocks to handle reorgs
+            const blockNumbersToProcess = [];
+            for (const process of this.contracts) {
+              const contractIndex = this.addressToIndex[process.address];
+              const eventsDataItems = await db.cache.where("objectName").equals(this.chainId + "_" + process.address + "_events").toArray();
+              if (eventsDataItems.length == 1) {
+                const storedLatestBlockNumber = eventsDataItems[0].object.latestBlockNumber;
+                events = eventsDataItems[0].object.events;
+                for (const [blockNumber, txIndexes] of Object.entries(events)) {
+                  if (!(blockNumber in this.blockTimestamps)) {
+                    blockNumbersToProcess.push(blockNumber);
+                  }
+                }
+              }
+            }
+            this.sync.completed = 0;
+            this.sync.total = blockNumbersToProcess.length;
+            this.sync.section = 'Block Timestamps';
+            const BATCHSIZE = 1000;
+            for (let i = 0; i < blockNumbersToProcess.length; i += BATCHSIZE) {
+              const batch = blockNumbersToProcess.slice(i, parseInt(i) + BATCHSIZE);
+              const data = await fetch(BLOCKTIMESTAMPSUBGRAPHURL, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                  query: BLOCKTIMESTAMPINQUERY,
+                  variables: { blockNumbers: batch.map(e => parseInt(e)) },
+                })
+              }).then(response => response.json())
+              .catch(function(e) {
+                console.log("error: " + e);
+              });
+              const timestamps = data.data && data.data.blocks || [];
+              for (const timestampItem of timestamps) {
+                Vue.set(this.blockTimestamps, timestampItem.number, parseInt(timestampItem.timestamp));
+              }
+              this.sync.completed += timestamps.length;
+              console.log(moment().format("HH:mm:ss") + " syncBlockTimestamps " + this.sync.completed + " of " + blockNumbersToProcess.length);
+            }
+            await db.cache.put({ objectName: this.chainId + "_blockTimestamps", object: this.blockTimestamps }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+          },
+
+          async processData(db) {
+            console.log(moment().format("HH:mm:ss") + " processData BEGIN");
+            const combined = {};
+            this.sync.completed = 0;
+            this.sync.total = 4;
+            this.sync.section = 'Process Data #1';
+            for (const process of this.contracts) {
+              console.log(moment().format("HH:mm:ss") + " processData: " + process.name);
+              const contractIndex = this.addressToIndex[process.address];
+              const eventsDataItems = await db.cache.where("objectName").equals(this.chainId + "_" + process.address + "_events").toArray();
+              if (eventsDataItems.length == 1) {
+                const storedLatestBlockNumber = eventsDataItems[0].object.latestBlockNumber;
+                events = eventsDataItems[0].object.events;
+                for (const [blockNumber, txIndexes] of Object.entries(events)) {
+                  if (!(blockNumber in combined)) {
+                    combined[blockNumber] = {};
+                  }
+                  for (const [txIndex, txData] of Object.entries(txIndexes)) {
+                    const [txHashIndex, logs] = txData;
+                    if (!(txIndex in combined[blockNumber])) {
+                      combined[blockNumber][txIndex] = [ txHashIndex, {} ];
+                    }
+                    for (const [logIndex, eventData] of Object.entries(logs)) {
+                      combined[blockNumber][txIndex][1][logIndex] = [ contractIndex, ...eventData ];
+                    }
+                  }
+                }
+              }
+              this.sync.completed++;
+            }
+
+            // TODO: Handle w1 and w2
+            const txs = [];
+            const tokens = {};
+            const offers = { "1": {}, "2": {} };
+            const v2Bids = {};
+            let lastToOwnerIndex = 0;
+            this.sync.completed = 0;
+            this.sync.total = Object.keys(combined).length;
+            this.sync.section = 'Process Data #2';
+            let lastDate = null;
+            let exchangeRate = null;
+            for (const blockNumber of Object.keys(combined).sort((a, b) => parseInt(a) - parseInt(b))) {
+              const timestamp = this.blockTimestamps[blockNumber] || null;
+              const yyyymmdd = timestamp && moment.unix(timestamp).utc().format("YYYYMMDD") || null;
+              if (yyyymmdd != lastDate) {
+                if (yyyymmdd in this.exchangeRates) {
+                  exchangeRate = this.exchangeRates[yyyymmdd];
+                }
+                lastDate = yyyymmdd;
+              }
+              const txIndexes = combined[blockNumber];
+              for (const txIndex of Object.keys(txIndexes).sort((a, b) => parseInt(a) - parseInt(b))) {
+                const txData = txIndexes[txIndex];
+                const [txHashIndex, logs] = txData;
+                const events = [];
+                const contractIndexes = {};
+                const punkIds = {};
+                for (const logIndex of Object.keys(logs).sort((a, b) => parseInt(a) - parseInt(b))) {
+                  const event = logs[logIndex];
+                  const [ contractIndex, eventType ] = [ event[0], event[1] ];
+                  if (!(contractIndex in contractIndexes)) {
+                    contractIndexes[contractIndex] = 1;
+                  }
+                  // Assign
+                  if (eventType == 0) {
+                    if (!(contractIndex in tokens)) {
+                      tokens[contractIndex] = {};
+                    }
+                    const [ ownerIndex, punkId ] = [ event[2], event[3].toString() ];
+                    if (parseInt(punkId) < 10000) {
+                      tokens[contractIndex][punkId] = ownerIndex;
+                      if (!(punkId in punkIds)) {
+                        punkIds[punkId] = 1;
+                      }
+                    }
+                    if (parseInt(punkId) > 9999 || punkId.length > 5) {
+                      console.log(moment().format("HH:mm:ss") + " processData: " + this.indexToTxHash[txHashIndex] + " - Invalid punkId" + " " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                    }
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
+
+                  // Transfer - W1 & W2
+                  } else if (eventType == 1) {
+                    if (contractIndex == 3 || contractIndex == 4) {
+                      if (!(contractIndex in tokens)) {
+                        tokens[contractIndex] = {};
+                      }
+                      // console.log(blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                      const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
+                      if (parseInt(punkId) < 10000) {
+                        tokens[contractIndex][punkId] = toOwnerIndex;
+                        if (!(punkId in punkIds)) {
+                          punkIds[punkId] = 1;
+                        }
+                      }
+                    } else {
+                      const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
+                      lastToOwnerIndex = toOwnerIndex;
+                    }
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+
+                  // PunkTransfer - V1 & V2 only
+                  } else if (eventType == 2) {
+                    const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
+                    if (parseInt(punkId) < 10000) {
+                      tokens[contractIndex][punkId] = toOwnerIndex;
+                      if (!(punkId in punkIds)) {
+                        punkIds[punkId] = 1;
+                      }
+                    }
+                    // console.log(blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+
+                  // PunkOffered - V1 & V2
+                  } else if (eventType == 3) {
+                    const [ punkId, minValue, toOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
+                    offers[contractIndex][punkId] = { minValue, toOwnerIndex };
+                    if (!(punkId in punkIds)) {
+                      punkIds[punkId] = 1;
+                    }
+                    // if (punkId == 5309) {
+                    //   console.log("PunkOffered " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                    // //   console.log("  offers[contractIndex][7144]: " + JSON.stringify(offers[contractIndex][7144]));
+                    // }
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4], tokens[contractIndex][punkId] ]);
+
+                  // PunkNoLongerForSale - V1 & V2
+                  } else if (eventType == 4) {
+                    const [ punkId ] = [ event[2] ];
+                    delete offers[contractIndex][punkId];
+                    if (!(punkId in punkIds)) {
+                      punkIds[punkId] = 1;
+                    }
+                    // if (punkId == 7144) {
+                    //   console.log("PunkNoLongerForSale " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                    //   console.log("  offers[contractIndex][7144]: " + JSON.stringify(offers[contractIndex][7144]));
+                    // }
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], tokens[contractIndex][punkId] ]);
+
+                  // PunkBidEntered - V2
+                  } else if (eventType == 5) {
+                    const [ punkId, value, fromOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
+                    v2Bids[punkId] = { value, fromOwnerIndex };
+                    if (!(punkId in punkIds)) {
+                      punkIds[punkId] = 1;
+                    }
+                    // if (punkId == 0) {
+                    //   console.log("PunkBidEntered " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                    //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
+                    // }
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+
+                  // PunkBidWithdrawn - V2
+                  } else if (eventType == 6) {
+                    const [ punkId, value, fromOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
+                    delete v2Bids[punkId];
+                    if (!(punkId in punkIds)) {
+                      punkIds[punkId] = 1;
+                    }
+                    // if (punkId == 0) {
+                    //   console.log("PunkBidWithdrawn " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                    //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
+                    // }
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+
+                  // PunkBought - V1 & V2
+                  } else if (eventType == 7) {
+                    let [ punkId, value, fromOwnerIndex, toOwnerIndex ] = [ event[2].toString(), event[3].toString(), event[4], event[5] ];
+                    // acceptBidForPunk() bug where value = 0 and fromOwner = 0x0
+                    const bidAccepted = (value == 0 && toOwnerIndex == 0) ? 1 : 0;
+                    if (value == 0 && toOwnerIndex == 0) {
+                      value = v2Bids[punkId].value;
+                      toOwnerIndex = v2Bids[punkId].fromOwnerIndex;
+                      delete v2Bids[punkId];
+                      delete offers[contractIndex][punkId];
+                    }
+                    if (parseInt(punkId) < 10000) {
+                      tokens[contractIndex][punkId] = toOwnerIndex;
+                      if (!(punkId in punkIds)) {
+                        punkIds[punkId] = 1;
+                      }
+                    }
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], value, fromOwnerIndex, toOwnerIndex, bidAccepted ]);
+                    // if (punkId == 0) {
+                    //   console.log("PunkBought " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                    //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
+                    // }
+
+                  // Approval - W1 & W2
+                  } else if (eventType == 8) {
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+
+                  // ApprovalForAll - W1 & W2
+                  } else if (eventType == 9) {
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+
+                  // OwnershipTransferred - ? W1 & W2
+                  } else if (eventType == 10) {
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
+
+                  // ProxyRegistered - W2
+                  } else if (eventType == 11) {
+                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
+
+                  }
+                }
+                const contractIndexList = Object.keys(contractIndexes).map(e => parseInt(e));
+                const punkIdList = Object.keys(punkIds).map(e => parseInt(e));
+                const txSummary = parsePunkTx(txHashIndex, events, this.addressToIndex, exchangeRate);
+                if (txSummary) {
+                  for (const [index, summary] of txSummary.entries()) {
+                    // TODO: Get rid of punkIdList
+                    txs.push([ timestamp, parseInt(blockNumber), parseInt(txIndex), index, txHashIndex, summary, contractIndexList, punkIdList, events ]);
+                  }
+                }
+              }
+              this.sync.completed++;
+            }
+
+            // console.log(moment().format("HH:mm:ss") + " processData - txs: " + JSON.stringify(txs));
+            await db.cache.put({ objectName: this.chainId + "_txs", object: txs }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            this.txs = txs;
+            if (tokens[1]) {
+              for (let punkId = 0; punkId < 10000; punkId++) {
+                if (!(punkId in tokens[1])) {
+                  tokens[1][punkId] = 0; // 0x0000...0000
+                }
+              }
+            }
+            await db.cache.put({ objectName: this.chainId + "_tokens", object: tokens }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            this.tokens = tokens;
+            await db.cache.put({ objectName: this.chainId + "_offers", object: offers }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            this.offers = offers;
+            await db.cache.put({ objectName: this.chainId + "_v2Bids", object: v2Bids }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            this.v2Bids = v2Bids;
+            console.log(moment().format("HH:mm:ss") + " processData END");
+          },
+
+          // TODO: Incremental sync with an overlap
+          async syncExchangeRates(db) {
+            console.log(moment().format("HH:mm:ss") + " syncExchangeRates - reportingCurrency: " + this.settings.reportingCurrency);
+            const MAXDAYS = 2000;
+            const MINDATE = moment("2017-06-09");
+            let toTs = moment();
+            const exchangeRates = {};
+            while (toTs.year() >= 2017) {
+              let days = toTs.diff(MINDATE, 'days');
+              if (days > MAXDAYS) {
+                days = MAXDAYS;
+              }
+              let url = "https://min-api.cryptocompare.com/data/v2/histoday?fsym=ETH&tsym=" + this.settings.reportingCurrency + "&toTs=" + toTs.unix() + "&limit=" + days;
+              if (this.settings.cryptoCompareAPIKey) {
+                url = url + "&api_key=" + this.settings.cryptoCompareAPIKey;
+              }
+              console.log(moment().format("HH:mm:ss") + " syncExchangeRates - url: " + url);
+              const data = await fetch(url)
+                .then(response => response.json())
+                .catch(function(e) {
+                  console.log("error: " + e);
+                });
+              for (day of data.Data.Data) {
+                exchangeRates[moment.unix(day.time).format("YYYYMMDD")] = day.close;
+              }
+              toTs = moment(toTs).subtract(MAXDAYS, 'days');
+            }
+            // console.log(moment().format("HH:mm:ss") + " syncExchangeRates - exchangeRates: " + JSON.stringify(exchangeRates));
+            await db.cache.put({ objectName: this.chainId + "_exchangeRates", object: exchangeRates }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            this.exchangeRates = exchangeRates;
+          },
+
+          // TODO: Refresh sync
+          async syncENSNames(newAddressIndexes, db, provider) {
+            const ensReverseRecordsContract = new ethers.Contract(ENSREVERSERECORDSADDRESS, ENSREVERSERECORDSABI, provider);
+            let indexToAddress = [];
+            let addressToIndex = {};
+            const indexToAddressDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToAddress").toArray();
+            if (indexToAddressDataItems.length == 1) {
+              indexToAddress = indexToAddressDataItems[0].object;
+              for (const [index, address] of indexToAddress.entries()) {
+                addressToIndex[address] = index;
+              }
+            }
+            const addresses = newAddressIndexes.map(e => indexToAddress[e]);
+            this.sync.completed = 0;
+            this.sync.total = addresses.length;
+            this.sync.section = 'ENS Names';
+            const MAXBATCHSIZE = 1000;
+            let batchSize = MAXBATCHSIZE;
+            let completed = 0;
+            let done = false;
+            let start = completed;
+            do {
+              let end = parseInt(start) + batchSize - 1;
+              if (end > addresses.length) {
+                end = addresses.length;
+              }
+              try {
+                const batch = addresses.slice(start, end + 1);
+                const allnames = await ensReverseRecordsContract.getNames(batch);
+                for (let j = 0; j < batch.length; j++) {
+                  const account = batch[j];
+                  const name = allnames[j];
+                  // TODO: const normalized = normalize(account);
+                  if (name.length > 0) {
+                    // console.log(account + " => " + name);
+                    Vue.set(this.indexToName, addressToIndex[account], name);
+                  }
+                }
+                start = parseInt(end) + 1;
+              } catch (e) {
+                if (batchSize > 1) {
+                  batchSize = parseInt(batchSize / 2);
+                } else {
+                  console.log("Skipping #" + start + " " + addresses[start]);
+                  start = parseInt(start) + 1;
+                  batchSize = MAXBATCHSIZE;
+                }
+              }
+              this.sync.completed = start;
+              done = start > addresses.length;
+            } while (!done);
+
+            for (const [address, name] of Object.entries(CUSTOMNAMES)) {
+              Vue.set(this.indexToName, addressToIndex[address], name);
+            }
+            // console.log("this.indexToName: " + JSON.stringify(this.indexToName, null, 2));
+            await db.cache.put({ objectName: CHAINID_MAINNET + "_indexToName", object: this.indexToName }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            console.log(moment().format("HH:mm:ss") + " syncENSNames END");
+          },
+
+          async loadCurrentData() {
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            for (const name of ['indexToAddress', 'indexToName', 'indexToTxHash', 'blockTimestamps', 'tokens', 'offers', 'v2Bids', 'txs', 'exchangeRates']) {
+              console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
+              const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
+              if (dataItems.length == 1) {
+                Vue.set(this, name, dataItems[0].object);
+              }
+            }
+            const addressToIndex = {};
+            for (const [index, address] of this.indexToAddress.entries()) {
+              addressToIndex[address] = index;
+            }
+            Vue.set(this, 'addressToIndex', addressToIndex);
+            const txHashToIndex = {};
+            for (const [index, address] of this.indexToTxHash.entries()) {
+              txHashToIndex[address] = index;
+            }
+            Vue.set(this, 'txHashToIndex', txHashToIndex);
+            db.close();
+          },
+
+          saveSettings() {
+            localStorage.cryptoPunksDataSettings = JSON.stringify(this.settings);
+          },
+          filterChanged(dataType, option) {
+            if (!this.settings.filters[dataType]) {
+              Vue.set(this.settings.filters, dataType, {});
+            }
+            if (this.settings.filters[dataType][option]) {
+              Vue.delete(this.settings.filters[dataType], option);
+              if (Object.keys(this.settings.filters[dataType]) == 0) {
+                Vue.delete(this.settings.filters, dataType);
+              }
+            } else {
+              Vue.set(this.settings.filters[dataType], option, true);
+            }
+            this.saveSettings();
+          },
+          resetFilters() {
+            Vue.set(this.settings, 'filters', {});
+            Vue.set(this.settings, 'filterByIds', null);
+            Vue.set(this.settings, 'filterByOwners', null);
+            this.saveSettings();
+          },
+
+          async processNewBlock(blockNumber) {
+            console.log(moment().format("HH:mm:ss") + " processNewBlock #" + this.commify0(blockNumber) + ", latest #" + this.commify0(this.blockNumber) + " @ " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + " " + moment.unix(this.timestamp).fromNow());
+          },
+
+          async halt() {
+            this.sync.halt = true;
+            console.log("this.sync.halt: " + this.sync.halt);
+          },
+          commify0(n) {
+            if (n != null) {
+              return Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+            return null;
+          },
+          commify2(n) {
+            if (n != null) {
+              return Number(parseFloat(n).toFixed(2)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            return null;
+          },
+          formatETH(e, precision = 9) {
+            try {
+              if (precision == 0) {
+                return e ? ethers.utils.formatEther(e) : null;
+              } else {
+                return e ? parseFloat(ethers.utils.formatEther(e)).toFixed(precision) : null;
+              }
+            } catch (err) {
+            }
+            return e.toFixed(precision);
+          },
+          formatGas(e, precision = 9) {
+            try {
+              if (precision == 0) {
+                return e ? ethers.utils.formatUnits(e, "gwei") : null;
+              } else {
+                return e ? parseFloat(ethers.utils.formatUnits(e, "gwei")).toFixed(precision) : null;
+              }
+            } catch (err) {
+            }
+            return e.toFixed(precision);
+          },
+          formatTimestamp(ts) {
+            if (ts != null) {
+              if (this.settings.reportingDateTime == 1) {
+                return moment.unix(ts).utc().format("YYYY-MM-DD HH:mm:ss");
+              } else {
+                return moment.unix(ts).format("YYYY-MM-DD HH:mm:ss");
+              }
+            }
+            return null;
+          },
+          formatTimeDiff(unixtime) {
+            if (!unixtime) {
+              return "";
+            } else {
+              return moment.unix(unixtime).fromNow();
+            }
+          },
+          ensOrAddress(addressOrAddressIndex, length = 0) {
+            let result = null;
+            if (new RegExp('^[0-9,]+$').test(addressOrAddressIndex)) {
+              if (addressOrAddressIndex in this.indexToName) {
+                result = this.indexToName[addressOrAddressIndex];
+              } else {
+                result = this.indexToAddress[addressOrAddressIndex];
+              }
+            } else {
+              if (addressOrAddressIndex in this.addressToIndex) {
+                result = this.indexToName[this.addressToIndex[addressOrAddressIndex]] || addressOrAddressIndex;
+              } else {
+                result = addressOrAddressIndex;
+              }
+            }
+            if (result && length > 0) {
+              result = result.substring(0, length);
+            }
+            return result;
+          },
+          exportTxHashes() {
+            console.log("exportTxHashes");
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.txHashes));
+            var link = document.createElement("a");
+            link.setAttribute("href", dataStr);
+            link.setAttribute("download", "txhashes.json");
+            document.body.appendChild(link); // Required for FF
+            link.click();
+          },
+          exportAccounts() {
+            console.log("exportAccounts");
+            const rows = [
+                ["No", "Address", "Name", "ENSName", "Group", "Sync", "Include"],
+            ];
+            let i = 1;
+            for (const result of this.filteredSortedAccounts) {
+              rows.push([
+                i,
+                result.address,
+                result.name,
+                result.ensName,
+                result.group,
+                result.sync ? "y" : "n",
+                result.include ? "y" : "n",
+              ]);
+              i++;
+            }
+            let tsvContent = "data:text/tsv;charset=utf-8," + rows.map(e => e.join("\t")).join("\n");
+            var encodedUri = encodeURI(tsvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "mynfts_account_export-" + moment().format("YYYY-MM-DD-HH-mm-ss") + ".tsv");
+            document.body.appendChild(link); // Required for FF
+            link.click(); // This will download the data with the specified file name
+          },
+          // async backupFilesChange(fileName, fileList) {
+          //   const reader = new FileReader();
+          //   this.restoreAddresses = [];
+          //   const t = this;
+          //   reader.onload = function (event) {
+          //     const data = event.target.result;
+          //     const lines = data.split("\n");
+          //     for (const line of lines) {
+          //       const fields = line.split("\t");
+          //       // console.log(JSON.stringify(fields));
+          //       if (fields[0] != "No") {
+          //         const [number, address, name, ensName, group, sync, include]  = fields;
+          //         t.restoreAddresses.push({ address, name, ensName, group, sync, include });
+          //       }
+          //     }
+          //   };
+          //   await reader.readAsText(fileList[0]);
+          // },
+          // restoreFromBackup() {
+          //   if (this.restoreAddresses) {
+          //     for (const addressData of this.restoreAddresses) {
+          //       if (!(addressData.address in this.settings.accounts)) {
+          //         console.log("Adding: " + JSON.stringify(addressData));
+          //         Vue.set(this.settings.accounts, addressData.address, {
+          //           name: addressData.name,
+          //           ensName: null,
+          //           group: addressData.group,
+          //           sync: true,
+          //           include: true,
+          //         });
+          //       } else {
+          //         console.log("Discarding duplicate: " + JSON.stringify(addressData));
+          //       }
+          //     }
+          //     this.saveSettings();
+          //   }
+          // },
+          copyToClipboard(str) {
+            navigator.clipboard.writeText(str);
+          },
+          async connectToWeb3() {
+            console.log(moment().format("HH:mm:ss") + " connectToWeb3");
+            if (!window.ethereum) {
+              this.connected = false;
+            } else {
+              try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                this.connected = window.ethereum.isConnected();
+              } catch (e) {
+                console.log("window.ethereum.request error: " + e.message);
+                this.connected = false;
+              }
+            }
+            // console.log(moment().format("HH:mm:ss") + " connectToWeb3 - connected: " + this.connected);
+            if (!this.connected) {
+              alert("Please use the https://metamask.io addon with Firefox, Chromium, Opera or Chrome, or any other other web3 browser, for web3 data retrieval. And refresh!");
+            } else {
+              const t = this;
+              // console.log(moment().format("HH:mm:ss") + " connectToWeb3 - installing listeners");
+              function handleChainChanged(_chainId) {
+                t.chainId = _chainId;
+                console.log(moment().format("HH:mm:ss") + " connectToWeb3 - handleChainChanged - this.chainId: " + t.chainId);
+                alert('Ethereum chain has changed - reloading this page.')
+                window.location.reload();
+              }
+              window.ethereum.on('chainChanged', handleChainChanged);
+              const provider = new ethers.providers.Web3Provider(window.ethereum);
+              async function handleAccountsChanged(accounts) {
+                const signer = provider.getSigner();
+                t.coinbase = await signer.getAddress();
+                console.log(moment().format("HH:mm:ss") + " connectToWeb3 - handleAccountsChanged: " + t.coinbase);
+              }
+              window.ethereum.on('accountsChanged', handleAccountsChanged);
+              async function handleNewBlock(blockNumber) {
+                if (!t.blockNumber || blockNumber > t.blockNumber) {
+                  const block = await provider.getBlock("latest");
+                  t.blockNumber = block.number;
+                  t.timestamp = block.timestamp;
+                  await t.processNewBlock(blockNumber);
+                }
+              }
+              provider.on("block", handleNewBlock);
+              const signer = provider.getSigner();
+              this.coinbase = await signer.getAddress();
+              const network = await provider.getNetwork();
+              this.chainId = network.chainId;
+              // console.log(moment().format("HH:mm:ss") + " connectToWeb3 - chainId: " + this.chainId);
+            }
+          },
+        },
+
+        // --- MOUNTED ---
+        mounted() {
+          (async() => {
+            await this.connectToWeb3();
+          })();
+          if ('cryptoPunksDataChainId' in localStorage) {
+            this.chainId = localStorage.cryptoPunksDataChainId;
+          }
+          if ('cryptoPunksDataCoinbase' in localStorage) {
+            this.coinbase = localStorage.cryptoPunksDataCoinbase;
+          }
+          if ('cryptoPunksDataSettings' in localStorage) {
+            const tempSettings = JSON.parse(localStorage.cryptoPunksDataSettings);
+            if ('version' in tempSettings && tempSettings.version == this.settings.version) {
+              this.settings = tempSettings;
+              if (this.settings.punksTable.currentPage > 1) {
+                this.settings.punksTable.currentPage = 1;
+              }
+              if (this.settings.activityTable.currentPage > 1) {
+                this.settings.activityTable.currentPage = 1;
+              }
+              if (this.settings.ownersTable.currentPage > 1) {
+                this.settings.ownersTable.currentPage = 1;
+              }
+            }
+          }
+          (async() => {
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            await this.loadCurrentData(db);
+            db.close();
+          })();
+          // (async() => {
+          //   // TODO: TESTING
+          //   await delay(4500);
+          //   await this.showModalTx(288878);
+          // })();
+        },
+      })
+    </script>
+  </body>
+</html>
