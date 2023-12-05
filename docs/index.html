@@ -304,6 +304,9 @@
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
+                <div v-if="!sync.section" class="mt-0 pr-1">
+                  <b-button size="sm" @click="doSomething()" variant="primary" v-b-popover.hover.bottom="'Do something'">Do Something</b-button>
+                </div>
                 <div v-if="false && !sync.section" class="mt-0 pr-1">
                   <b-button size="sm" @click="syncIt(false)" variant="primary" v-b-popover.hover.bottom="'Sync CryptoPunks Event Logs. This will take ~10 minutes initially, and < 1 minute subsequently'">Sync</b-button>
                 </div>
@@ -2509,12 +2512,12 @@
             const rentPrice = await ethRegistrarControllerContract.rentPrice(name, duration);
             console.log("rentPrice: " + rentPrice);
 
-            try {
-              const tx = await ethRegistrarControllerContractWithSigner.renew(name, duration, { value: ethers.utils.parseEther("0.005") });
-              console.log("tx: " + JSON.stringify(tx));
-            } catch (e) {
-              console.log("executeBuy error: " + JSON.stringify(e));
-            }
+            // try {
+            //   const tx = await ethRegistrarControllerContractWithSigner.renew(name, duration, { value: ethers.utils.parseEther("0.005") });
+            //   console.log("tx: " + JSON.stringify(tx));
+            // } catch (e) {
+            //   console.log("executeBuy error: " + JSON.stringify(e));
+            // }
 
             // try {
             //   const tx = await signer.sendTransaction({ to: WETH9ADDRESS_SEPOLIA, value: ethers.utils.parseEther(this.wethFormData.amount) });
