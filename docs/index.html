@@ -2498,6 +2498,35 @@
 
           async doSomething() {
             console.log(moment().format("HH:mm:ss") + " doSomething");
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            const ethRegistrarControllerContract = new ethers.Contract(ETHREGISTRARCONTROLLERADDRESS, ETHREGISTRARCONTROLLERABI, provider);
+            const ethRegistrarControllerContractWithSigner = ethRegistrarControllerContract.connect(provider.getSigner());
+
+            const name = "bokky";
+            const duration = 12345;
+            const rentPrice = await ethRegistrarControllerContract.rentPrice(name, duration);
+            console.log("rentPrice: " + rentPrice);
+
+            try {
+              const tx = await ethRegistrarControllerContractWithSigner.renew(name, duration, { value: ethers.utils.parseEther("0.005") });
+              console.log("tx: " + JSON.stringify(tx));
+            } catch (e) {
+              console.log("executeBuy error: " + JSON.stringify(e));
+            }
+
+            // try {
+            //   const tx = await signer.sendTransaction({ to: WETH9ADDRESS_SEPOLIA, value: ethers.utils.parseEther(this.wethFormData.amount) });
+            //   console.log("tx: " + JSON.stringify(tx));
+            // } catch (e) {
+            //   console.log("wethFormHandleSubmit error: " + JSON.stringify(e));
+            // }
+
+
+            // const ETHREGISTRARCONTROLLERADDRESS = "0x253553366Da8546fC250F225fe3d25d0C782303b";
+            // const ETHREGISTRARCONTROLLERABI = [{"inputs":[{"internalType":"contract BaseRegistrarImplementation","name":"_base","type":"address"},{"internalType":"contract IPriceOracle","name":"_prices","type":"address"},{"internalType":"uint256","name":"_minCommitmentAge","type":"uint256"},{"internalType":"uint256","name":"_maxCommitmentAge","type":"uint256"},{"internalType":"contract ReverseRegistrar","name":"_reverseRegistrar","type":"address"},{"internalType":"contract
+
           },
 
 
