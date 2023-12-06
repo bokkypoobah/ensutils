@@ -1230,8 +1230,8 @@
           ],
           contracts: [
             // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
             // { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
@@ -1846,7 +1846,8 @@
                     const eventType = logData.eventFragment.name;
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     let record = null;
-                    if (eventType == "NameRegistered") {
+                    // --- ETHRegistrarController ---
+                    if (eventType == "xNameRegistered") {
                       // event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
                       if (!(name in nameToIndex)) {
@@ -1866,7 +1867,7 @@
                       }
                       const ownerIndex = addressToIndex[owner];
                       record = [eventTypeIndex, nameIndex, labelIndex, ownerIndex, baseCost.toString(), premium.toString(), parseInt(expires)];
-                    } else if (eventType == "NameRenewed") {
+                    } else if (eventType == "xNameRenewed") {
                       // event NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
                       const [name, label, cost, expires] = logData.args;
                       if (!(name in nameToIndex)) {
@@ -1880,7 +1881,9 @@
                       }
                       const labelIndex = labelToIndex[label];
                       record = [eventTypeIndex, nameIndex, labelIndex, cost.toString(), parseInt(expires)];
-                    } else if (eventType == "AddrChanged") {
+
+                    // --- PublicResolver ---
+                  } else if (eventType == "xAddrChanged") {
                       // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
                       const [node, a] = logData.args;
                       if (!(node in labelToIndex)) {
@@ -1895,7 +1898,7 @@
                       }
                       const aIndex = addressToIndex[a];
                       // record = [eventTypeIndex, nodeIndex, aIndex];
-                    } else if (eventType == "AddressChanged") {
+                    } else if (eventType == "xAddressChanged") {
                       // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
                       const [node, coinType, newAddress] = logData.args;
                       if (!(node in labelToIndex)) {
@@ -1910,23 +1913,35 @@
                       }
                       const newAddressIndex = addressToIndex[newAddress];
                       // record = [eventTypeIndex, nodeIndex, parseInt(coinType), newAddressIndex];
-                    } else if (eventType == "TextChanged") {
+                    } else if (eventType == "xTextChanged") {
                       // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
-                    } else if (eventType == "ContenthashChanged") {
+                    } else if (eventType == "xContenthashChanged") {
                       // event IContentHashResolver.ContenthashChanged(bytes32 indexed node, bytes hash);
-                    } else if (eventType == "NameChanged") {
+                    } else if (eventType == "xNameChanged") {
                       // event INameResolver.NameChanged(bytes32 indexed node, string name);
-                    } else if (eventType == "ABIChanged") {
+                    } else if (eventType == "xABIChanged") {
                       // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
-                    } else if (eventType == "VersionChanged") {
+                    } else if (eventType == "xVersionChanged") {
                       // event IVersionableResolver.VersionChanged(bytes32 indexed node, uint64 newVersion);
-                    } else if (eventType == "PubkeyChanged") {
+                    } else if (eventType == "xPubkeyChanged") {
                       // event IPubkeyResolver.PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
-
-                    } else if (eventType == "ApprovalForAll") {
+                    } else if (eventType == "xApprovalForAll") {
                       // event PublicResolver.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-                    } else if (eventType == "Approved") {
+                      // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+                    } else if (eventType == "xApproved") {
                       // event PublicResolver.Approved(address owner, bytes32 indexed node, address indexed delegate, bool indexed approved);
+
+                    } else if (eventType == "xApproval") {
+                      // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+                    } else if (eventType == "xTransfer") {
+                      // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+
+                    } else if (eventType == "xOwnershipTransferred") {
+                      // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+                    } else if (eventType == "xControllerAdded") {
+                      // event BaseRegistrarImplementation.ControllerAdded(address indexed controller);
+
 
                     // } else if (eventType == "Assign") {
                     //   const [to, punkIndex] = logData.args;
@@ -2075,6 +2090,8 @@
                     }
                     if (record) {
                       console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
+                    } else {
+                      console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " ? " + eventType);
                     }
                     if (record) {
                       const confirmations = latestBlockNumber - blockNumber;
@@ -2558,7 +2575,7 @@
           async loadCurrentData() {
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToName', 'indexToLabel', 'indexToTxHash', 'blockTimestamps', 'tokens', 'offers', 'v2Bids', 'txs', 'exchangeRates']) {
+            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToName', 'indexToLabel', 'indexToTxHash', 'blockTimestamps', 'exchangeRates']) {
               console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
               const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
               if (dataItems.length == 1) {
