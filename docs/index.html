@@ -1763,9 +1763,9 @@
             // if (!devMode) {
             //   await this.syncENSNames(newAddressIndexes, db, provider);
             // }
-            // if (!devMode) {
-            //   await this.syncBlockTimestamps(db);
-            // }
+            if (!devMode) {
+              await this.syncBlockTimestamps(db);
+            }
             // if (!devMode) {
             //   await this.syncExchangeRates(db);
             // }
