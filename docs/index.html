@@ -1769,9 +1769,9 @@
             // if (!devMode) {
             //   await this.syncExchangeRates(db);
             // }
-            // if (!devMode) {
-            //   await this.processData(db);
-            // }
+            if (!devMode) {
+              await this.processData(db);
+            }
             if (!devMode) {
               await this.loadCurrentData();
             }
@@ -2200,147 +2200,147 @@
                   if (!(contractIndex in contractIndexes)) {
                     contractIndexes[contractIndex] = 1;
                   }
-                  // Assign
-                  if (eventType == 0) {
-                    if (!(contractIndex in tokens)) {
-                      tokens[contractIndex] = {};
-                    }
-                    const [ ownerIndex, punkId ] = [ event[2], event[3].toString() ];
-                    if (parseInt(punkId) < 10000) {
-                      tokens[contractIndex][punkId] = ownerIndex;
-                      if (!(punkId in punkIds)) {
-                        punkIds[punkId] = 1;
-                      }
-                    }
-                    if (parseInt(punkId) > 9999 || punkId.length > 5) {
-                      console.log(moment().format("HH:mm:ss") + " processData: " + this.indexToTxHash[txHashIndex] + " - Invalid punkId" + " " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                    }
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
-
-                  // Transfer - W1 & W2
-                  } else if (eventType == 1) {
-                    if (contractIndex == 3 || contractIndex == 4) {
-                      if (!(contractIndex in tokens)) {
-                        tokens[contractIndex] = {};
-                      }
-                      // console.log(blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                      const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
-                      if (parseInt(punkId) < 10000) {
-                        tokens[contractIndex][punkId] = toOwnerIndex;
-                        if (!(punkId in punkIds)) {
-                          punkIds[punkId] = 1;
-                        }
-                      }
-                    } else {
-                      const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
-                      lastToOwnerIndex = toOwnerIndex;
-                    }
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
-
-                  // PunkTransfer - V1 & V2 only
-                  } else if (eventType == 2) {
-                    const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
-                    if (parseInt(punkId) < 10000) {
-                      tokens[contractIndex][punkId] = toOwnerIndex;
-                      if (!(punkId in punkIds)) {
-                        punkIds[punkId] = 1;
-                      }
-                    }
-                    // console.log(blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
-
-                  // PunkOffered - V1 & V2
-                  } else if (eventType == 3) {
-                    const [ punkId, minValue, toOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
-                    offers[contractIndex][punkId] = { minValue, toOwnerIndex };
-                    if (!(punkId in punkIds)) {
-                      punkIds[punkId] = 1;
-                    }
-                    // if (punkId == 5309) {
-                    //   console.log("PunkOffered " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                    // //   console.log("  offers[contractIndex][7144]: " + JSON.stringify(offers[contractIndex][7144]));
-                    // }
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4], tokens[contractIndex][punkId] ]);
-
-                  // PunkNoLongerForSale - V1 & V2
-                  } else if (eventType == 4) {
-                    const [ punkId ] = [ event[2] ];
-                    delete offers[contractIndex][punkId];
-                    if (!(punkId in punkIds)) {
-                      punkIds[punkId] = 1;
-                    }
-                    // if (punkId == 7144) {
-                    //   console.log("PunkNoLongerForSale " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                    //   console.log("  offers[contractIndex][7144]: " + JSON.stringify(offers[contractIndex][7144]));
-                    // }
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], tokens[contractIndex][punkId] ]);
-
-                  // PunkBidEntered - V2
-                  } else if (eventType == 5) {
-                    const [ punkId, value, fromOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
-                    v2Bids[punkId] = { value, fromOwnerIndex };
-                    if (!(punkId in punkIds)) {
-                      punkIds[punkId] = 1;
-                    }
-                    // if (punkId == 0) {
-                    //   console.log("PunkBidEntered " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                    //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
-                    // }
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
-
-                  // PunkBidWithdrawn - V2
-                  } else if (eventType == 6) {
-                    const [ punkId, value, fromOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
-                    delete v2Bids[punkId];
-                    if (!(punkId in punkIds)) {
-                      punkIds[punkId] = 1;
-                    }
-                    // if (punkId == 0) {
-                    //   console.log("PunkBidWithdrawn " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                    //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
-                    // }
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
-
-                  // PunkBought - V1 & V2
-                  } else if (eventType == 7) {
-                    let [ punkId, value, fromOwnerIndex, toOwnerIndex ] = [ event[2].toString(), event[3].toString(), event[4], event[5] ];
-                    // acceptBidForPunk() bug where value = 0 and fromOwner = 0x0
-                    const bidAccepted = (value == 0 && toOwnerIndex == 0) ? 1 : 0;
-                    if (value == 0 && toOwnerIndex == 0) {
-                      value = v2Bids[punkId].value;
-                      toOwnerIndex = v2Bids[punkId].fromOwnerIndex;
-                      delete v2Bids[punkId];
-                      delete offers[contractIndex][punkId];
-                    }
-                    if (parseInt(punkId) < 10000) {
-                      tokens[contractIndex][punkId] = toOwnerIndex;
-                      if (!(punkId in punkIds)) {
-                        punkIds[punkId] = 1;
-                      }
-                    }
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], value, fromOwnerIndex, toOwnerIndex, bidAccepted ]);
-                    // if (punkId == 0) {
-                    //   console.log("PunkBought " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
-                    //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
-                    // }
-
-                  // Approval - W1 & W2
-                  } else if (eventType == 8) {
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
-
-                  // ApprovalForAll - W1 & W2
-                  } else if (eventType == 9) {
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
-
-                  // OwnershipTransferred - ? W1 & W2
-                  } else if (eventType == 10) {
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
-
-                  // ProxyRegistered - W2
-                  } else if (eventType == 11) {
-                    events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
-
-                  }
+                  // // Assign
+                  // if (eventType == 0) {
+                  //   if (!(contractIndex in tokens)) {
+                  //     tokens[contractIndex] = {};
+                  //   }
+                  //   const [ ownerIndex, punkId ] = [ event[2], event[3].toString() ];
+                  //   if (parseInt(punkId) < 10000) {
+                  //     tokens[contractIndex][punkId] = ownerIndex;
+                  //     if (!(punkId in punkIds)) {
+                  //       punkIds[punkId] = 1;
+                  //     }
+                  //   }
+                  //   if (parseInt(punkId) > 9999 || punkId.length > 5) {
+                  //     console.log(moment().format("HH:mm:ss") + " processData: " + this.indexToTxHash[txHashIndex] + " - Invalid punkId" + " " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //   }
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
+                  //
+                  // // Transfer - W1 & W2
+                  // } else if (eventType == 1) {
+                  //   if (contractIndex == 3 || contractIndex == 4) {
+                  //     if (!(contractIndex in tokens)) {
+                  //       tokens[contractIndex] = {};
+                  //     }
+                  //     // console.log(blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //     const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
+                  //     if (parseInt(punkId) < 10000) {
+                  //       tokens[contractIndex][punkId] = toOwnerIndex;
+                  //       if (!(punkId in punkIds)) {
+                  //         punkIds[punkId] = 1;
+                  //       }
+                  //     }
+                  //   } else {
+                  //     const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
+                  //     lastToOwnerIndex = toOwnerIndex;
+                  //   }
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+                  //
+                  // // PunkTransfer - V1 & V2 only
+                  // } else if (eventType == 2) {
+                  //   const [ fromOwnerIndex, toOwnerIndex, punkId ] = [ event[2], event[3], event[4].toString() ];
+                  //   if (parseInt(punkId) < 10000) {
+                  //     tokens[contractIndex][punkId] = toOwnerIndex;
+                  //     if (!(punkId in punkIds)) {
+                  //       punkIds[punkId] = 1;
+                  //     }
+                  //   }
+                  //   // console.log(blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+                  //
+                  // // PunkOffered - V1 & V2
+                  // } else if (eventType == 3) {
+                  //   const [ punkId, minValue, toOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
+                  //   offers[contractIndex][punkId] = { minValue, toOwnerIndex };
+                  //   if (!(punkId in punkIds)) {
+                  //     punkIds[punkId] = 1;
+                  //   }
+                  //   // if (punkId == 5309) {
+                  //   //   console.log("PunkOffered " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //   // //   console.log("  offers[contractIndex][7144]: " + JSON.stringify(offers[contractIndex][7144]));
+                  //   // }
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4], tokens[contractIndex][punkId] ]);
+                  //
+                  // // PunkNoLongerForSale - V1 & V2
+                  // } else if (eventType == 4) {
+                  //   const [ punkId ] = [ event[2] ];
+                  //   delete offers[contractIndex][punkId];
+                  //   if (!(punkId in punkIds)) {
+                  //     punkIds[punkId] = 1;
+                  //   }
+                  //   // if (punkId == 7144) {
+                  //   //   console.log("PunkNoLongerForSale " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //   //   console.log("  offers[contractIndex][7144]: " + JSON.stringify(offers[contractIndex][7144]));
+                  //   // }
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], tokens[contractIndex][punkId] ]);
+                  //
+                  // // PunkBidEntered - V2
+                  // } else if (eventType == 5) {
+                  //   const [ punkId, value, fromOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
+                  //   v2Bids[punkId] = { value, fromOwnerIndex };
+                  //   if (!(punkId in punkIds)) {
+                  //     punkIds[punkId] = 1;
+                  //   }
+                  //   // if (punkId == 0) {
+                  //   //   console.log("PunkBidEntered " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //   //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
+                  //   // }
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+                  //
+                  // // PunkBidWithdrawn - V2
+                  // } else if (eventType == 6) {
+                  //   const [ punkId, value, fromOwnerIndex ] = [ event[2], event[3].toString(), event[4] ];
+                  //   delete v2Bids[punkId];
+                  //   if (!(punkId in punkIds)) {
+                  //     punkIds[punkId] = 1;
+                  //   }
+                  //   // if (punkId == 0) {
+                  //   //   console.log("PunkBidWithdrawn " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //   //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
+                  //   // }
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+                  //
+                  // // PunkBought - V1 & V2
+                  // } else if (eventType == 7) {
+                  //   let [ punkId, value, fromOwnerIndex, toOwnerIndex ] = [ event[2].toString(), event[3].toString(), event[4], event[5] ];
+                  //   // acceptBidForPunk() bug where value = 0 and fromOwner = 0x0
+                  //   const bidAccepted = (value == 0 && toOwnerIndex == 0) ? 1 : 0;
+                  //   if (value == 0 && toOwnerIndex == 0) {
+                  //     value = v2Bids[punkId].value;
+                  //     toOwnerIndex = v2Bids[punkId].fromOwnerIndex;
+                  //     delete v2Bids[punkId];
+                  //     delete offers[contractIndex][punkId];
+                  //   }
+                  //   if (parseInt(punkId) < 10000) {
+                  //     tokens[contractIndex][punkId] = toOwnerIndex;
+                  //     if (!(punkId in punkIds)) {
+                  //       punkIds[punkId] = 1;
+                  //     }
+                  //   }
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], value, fromOwnerIndex, toOwnerIndex, bidAccepted ]);
+                  //   // if (punkId == 0) {
+                  //   //   console.log("PunkBought " + blockNumber + " " + txIndex + " " + txHashIndex + " " + logIndex + " " + contractIndex + " " + eventType + " " + JSON.stringify(event));
+                  //   //   console.log("  v2Bids[0]: " + JSON.stringify(v2Bids[0]));
+                  //   // }
+                  //
+                  // // Approval - W1 & W2
+                  // } else if (eventType == 8) {
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+                  //
+                  // // ApprovalForAll - W1 & W2
+                  // } else if (eventType == 9) {
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3], event[4] ]);
+                  //
+                  // // OwnershipTransferred - ? W1 & W2
+                  // } else if (eventType == 10) {
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
+                  //
+                  // // ProxyRegistered - W2
+                  // } else if (eventType == 11) {
+                  //   events.push([ parseInt(logIndex), contractIndex, eventType, event[2], event[3] ]);
+                  //
+                  // }
                 }
                 const contractIndexList = Object.keys(contractIndexes).map(e => parseInt(e));
                 const punkIdList = Object.keys(punkIds).map(e => parseInt(e));
