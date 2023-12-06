@@ -1080,8 +1080,8 @@
           txHashToIndex: {},
           indexToTxHash: [],
           indexToAddressName: {},
-          indexToName: [],
-          nameToIndex: {},
+          indexToString: [],
+          stringToIndex: {},
           indexToLabel: [],
           labelToIndex: {},
           txs: [],
@@ -1788,13 +1788,13 @@
                 txHashToIndex[txHash] = index;
               }
             }
-            let indexToName = [];
-            const nameToIndex = {};
-            const indexToNameDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToName").toArray();
-            if (indexToNameDataItems.length == 1) {
-              indexToName = indexToNameDataItems[0].object;
-              for (const [index, txHash] of indexToName.entries()) {
-                nameToIndex[txHash] = index;
+            let indexToString = [];
+            const stringToIndex = {};
+            const indexToStringDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToString").toArray();
+            if (indexToStringDataItems.length == 1) {
+              indexToString = indexToStringDataItems[0].object;
+              for (const [index, txHash] of indexToString.entries()) {
+                stringToIndex[txHash] = index;
               }
             }
             let indexToLabel = [];
@@ -1856,14 +1856,14 @@
                       }
                       return addressToIndex[address];
                     }
-                    function indexiseName(name) {
-                      if (!(name in nameToIndex)) {
-                        nameToIndex[name] = indexToName.length;
-                        indexToName.push(name);
+                    function indexiseString(name) {
+                      if (!(name in stringToIndex)) {
+                        stringToIndex[name] = indexToString.length;
+                        indexToString.push(name);
                       }
-                      return nameToIndex[name];
+                      return stringToIndex[name];
                     }
-                    function indexiseLabel(label) {
+                    function indexiseHash(label) {
                       if (!(label in labelToIndex)) {
                         labelToIndex[label] = indexToLabel.length;
                         indexToLabel.push(label);
@@ -1876,12 +1876,11 @@
                       // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
                       // TODO: event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
-                      record = [eventTypeIndex, indexiseName(name), indexiseLabel(label), indexiseAddress(owner), baseCost.toString(), premium.toString(), parseInt(expires)];
+                      record = [eventTypeIndex, indexiseString(name), indexiseHash(label), indexiseAddress(owner), baseCost.toString(), premium.toString(), parseInt(expires)];
                     } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
                       // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
-                      // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
                       const [name, label, cost, expires] = logData.args;
-                      record = [eventTypeIndex, indexiseName(name), indexiseLabel(label), cost.toString(), parseInt(expires)];
+                      record = [eventTypeIndex, indexiseString(name), indexiseHash(label), cost.toString(), parseInt(expires)];
                     } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS || event.address == REVERSEREGISTRARADDRESS) && eventType == "OwnershipTransferred") {
                       // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                       // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -1892,11 +1891,11 @@
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
                       // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
                       const [node, a] = logData.args;
-                      record = [eventTypeIndex, indexiseLabel(node), indexiseAddress(a)];
+                      record = [eventTypeIndex, indexiseHash(node), indexiseAddress(a)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddressChanged") {
                       // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
                       const [node, coinType, newAddress] = logData.args;
-                      record = [eventTypeIndex, indexiseLabel(node), parseInt(coinType), indexiseAddress(newAddress)];
+                      record = [eventTypeIndex, indexiseHash(node), parseInt(coinType), indexiseAddress(newAddress)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "TextChanged") {
                       // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
                       record = [eventTypeIndex];
@@ -2195,9 +2194,9 @@
               }).catch(function(error) {
                 console.log("error: " + error);
               });
-              Vue.set(this, "nameToIndex", nameToIndex);
-              Vue.set(this, "indexToName", indexToName);
-              await db.cache.put({ objectName: this.chainId + "_indexToName", object: indexToName }).then (function() {
+              Vue.set(this, "stringToIndex", stringToIndex);
+              Vue.set(this, "indexToString", indexToString);
+              await db.cache.put({ objectName: this.chainId + "_indexToString", object: indexToString }).then (function() {
               }).catch(function(error) {
                 console.log("error: " + error);
               });
@@ -2616,7 +2615,7 @@
           async loadCurrentData() {
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToName', 'indexToLabel', 'indexToTxHash', 'blockTimestamps', 'exchangeRates']) {
+            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToString', 'indexToLabel', 'indexToTxHash', 'blockTimestamps', 'exchangeRates']) {
               console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
               const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
               if (dataItems.length == 1) {
@@ -2633,18 +2632,18 @@
               txHashToIndex[address] = index;
             }
             Vue.set(this, 'txHashToIndex', txHashToIndex);
-            const nameToIndex = {};
-            for (const [index, address] of this.indexToName.entries()) {
-              nameToIndex[address] = index;
+            const stringToIndex = {};
+            for (const [index, address] of this.indexToString.entries()) {
+              stringToIndex[address] = index;
             }
-            Vue.set(this, 'nameToIndex', nameToIndex);
+            Vue.set(this, 'stringToIndex', stringToIndex);
             const labelToIndex = {};
             for (const [index, address] of this.indexToLabel.entries()) {
               labelToIndex[address] = index;
             }
             Vue.set(this, 'labelToIndex', labelToIndex);
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToName: " + JSON.stringify(this.indexToName, null, 2));
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - nameToIndex['ethereumdex']: " + JSON.stringify(this.nameToIndex['ethereumdex'], null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToString: " + JSON.stringify(this.indexToString, null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - stringToIndex['ethereumdex']: " + JSON.stringify(this.stringToIndex['ethereumdex'], null, 2));
             console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToLabel: " + JSON.stringify(this.indexToLabel, null, 2));
             db.close();
           },
@@ -2749,14 +2748,14 @@
           ensOrAddress(addressOrAddressIndex, length = 0) {
             let result = null;
             if (new RegExp('^[0-9,]+$').test(addressOrAddressIndex)) {
-              if (addressOrAddressIndex in this.indexToName) {
-                result = this.indexToName[addressOrAddressIndex];
+              if (addressOrAddressIndex in this.indexToString) {
+                result = this.indexToString[addressOrAddressIndex];
               } else {
                 result = this.indexToAddress[addressOrAddressIndex];
               }
             } else {
               if (addressOrAddressIndex in this.addressToIndex) {
-                result = this.indexToName[this.addressToIndex[addressOrAddressIndex]] || addressOrAddressIndex;
+                result = this.indexToString[this.addressToIndex[addressOrAddressIndex]] || addressOrAddressIndex;
               } else {
                 result = addressOrAddressIndex;
               }
