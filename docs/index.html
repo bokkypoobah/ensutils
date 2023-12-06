@@ -1882,7 +1882,7 @@
                       // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
                       const [name, label, cost, expires] = logData.args;
                       record = [eventTypeIndex, indexiseName(name), indexiseLabel(label), cost.toString(), parseInt(expires)];
-                    } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS) && eventType == "OwnershipTransferred") {
+                    } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS || event.address == REVERSEREGISTRARADDRESS) && eventType == "OwnershipTransferred") {
                       // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                       // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                       const [previousOwner, newOwner] = logData.args;
@@ -1979,6 +1979,9 @@
                       record = [eventTypeIndex];
                     } else if (event.address == REVERSEREGISTRARADDRESS && eventType == "DefaultResolverChanged") {
                       // event ReverseRegistrar.DefaultResolverChanged(NameResolver indexed resolver);
+                      record = [eventTypeIndex];
+                    } else if (event.address == REVERSEREGISTRARADDRESS && eventType == "ControllerChanged") {
+                      // event ControllerChanged(address indexed controller, bool enabled);
                       record = [eventTypeIndex];
 
                     // } else if (eventType == "Assign") {

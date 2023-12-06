@@ -61,6 +61,8 @@ const REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER = 16925606; // Mar-28-2023 11:42:35 
 
 // event ReverseRegistrar.ReverseClaimed(address indexed addr, bytes32 indexed node);
 // event ReverseRegistrar.DefaultResolverChanged(NameResolver indexed resolver);
+// event ControllerChanged(address indexed controller, bool enabled);
+// event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
 
 
