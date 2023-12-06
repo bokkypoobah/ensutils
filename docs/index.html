@@ -305,10 +305,7 @@
                 <div class="mt-0 flex-grow-1">
                 </div>
                 <div v-if="!sync.section" class="mt-0 pr-1">
-                  <b-button size="sm" @click="doSomething()" variant="primary" v-b-popover.hover.bottom="'Do something'">Do Something</b-button>
-                </div>
-                <div v-if="false && !sync.section" class="mt-0 pr-1">
-                  <b-button size="sm" @click="syncIt(false)" variant="primary" v-b-popover.hover.bottom="'Sync CryptoPunks Event Logs. This will take ~10 minutes initially, and < 1 minute subsequently'">Sync</b-button>
+                  <b-button size="sm" @click="syncIt(false)" variant="primary" v-b-popover.hover.bottom="'Sync data'">Sync</b-button>
                 </div>
                 <div v-if="false && !sync.section" class="mt-0 pr-1">
                   <b-button size="sm" @click="syncIt(true)" variant="outline-primary" v-b-popover.hover.bottom="'This will do dev things'">Dev</b-button>
@@ -459,8 +456,8 @@
 
                   <b-card no-body class="my-1 p-1">
                     <b-card-body class="mt-1 p-1">
-                      <h4>Do Something</h4>
-                      <b-link size="sm" @click="doSomething" variant="link" v-b-popover.hover.bottom="'Click to do something'">Do Something</b-link>
+                      <h4>Something Something</h4>
+                      <!-- <b-link size="sm" @click="doSomething" variant="link" v-b-popover.hover.bottom="'Click to do something'">Do Something</b-link> -->
                     </b-card-body>
                   </b-card>
 
@@ -1736,24 +1733,24 @@
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " syncIt - latestBlockNumber: " + latestBlockNumber + ", chainId: " + this.chainId);
             let newAddressIndexes = [];
-            if (!devMode) {
-              newAddressIndexes = await this.syncCryptoPunksEvents(db, provider, latestBlockNumber);
-            }
-            if (!devMode) {
-              await this.syncENSNames(newAddressIndexes, db, provider);
-            }
-            if (!devMode) {
-              await this.syncBlockTimestamps(db);
-            }
-            if (!devMode) {
-              await this.syncExchangeRates(db);
-            }
-            if (!devMode) {
-              await this.processData(db);
-            }
-            if (!devMode) {
-              await this.loadCurrentData();
-            }
+            // if (!devMode) {
+            //   newAddressIndexes = await this.syncCryptoPunksEvents(db, provider, latestBlockNumber);
+            // }
+            // if (!devMode) {
+            //   await this.syncENSNames(newAddressIndexes, db, provider);
+            // }
+            // if (!devMode) {
+            //   await this.syncBlockTimestamps(db);
+            // }
+            // if (!devMode) {
+            //   await this.syncExchangeRates(db);
+            // }
+            // if (!devMode) {
+            //   await this.processData(db);
+            // }
+            // if (!devMode) {
+            //   await this.loadCurrentData();
+            // }
             this.sync.section = null;
             this.sync.halt = false;
           },
@@ -2499,39 +2496,19 @@
             console.log(moment().format("HH:mm:ss") + " processNewBlock #" + this.commify0(blockNumber) + ", latest #" + this.commify0(this.blockNumber) + " @ " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + " " + moment.unix(this.timestamp).fromNow());
           },
 
-          async doSomething() {
-            console.log(moment().format("HH:mm:ss") + " doSomething");
-
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const ethRegistrarControllerContract = new ethers.Contract(ETHREGISTRARCONTROLLERADDRESS, ETHREGISTRARCONTROLLERABI, provider);
-            const ethRegistrarControllerContractWithSigner = ethRegistrarControllerContract.connect(provider.getSigner());
-
-            const name = "bokky";
-            const duration = 12345;
-            const rentPrice = await ethRegistrarControllerContract.rentPrice(name, duration);
-            console.log("rentPrice: " + rentPrice);
-
-            // try {
-            //   const tx = await ethRegistrarControllerContractWithSigner.renew(name, duration, { value: ethers.utils.parseEther("0.005") });
-            //   console.log("tx: " + JSON.stringify(tx));
-            // } catch (e) {
-            //   console.log("executeBuy error: " + JSON.stringify(e));
-            // }
-
-            // try {
-            //   const tx = await signer.sendTransaction({ to: WETH9ADDRESS_SEPOLIA, value: ethers.utils.parseEther(this.wethFormData.amount) });
-            //   console.log("tx: " + JSON.stringify(tx));
-            // } catch (e) {
-            //   console.log("wethFormHandleSubmit error: " + JSON.stringify(e));
-            // }
-
-
-            // const ETHREGISTRARCONTROLLERADDRESS = "0x253553366Da8546fC250F225fe3d25d0C782303b";
-            // const ETHREGISTRARCONTROLLERABI = [{"inputs":[{"internalType":"contract BaseRegistrarImplementation","name":"_base","type":"address"},{"internalType":"contract IPriceOracle","name":"_prices","type":"address"},{"internalType":"uint256","name":"_minCommitmentAge","type":"uint256"},{"internalType":"uint256","name":"_maxCommitmentAge","type":"uint256"},{"internalType":"contract ReverseRegistrar","name":"_reverseRegistrar","type":"address"},{"internalType":"contract
-
-          },
-
+          // async doSomething() {
+          //   console.log(moment().format("HH:mm:ss") + " doSomething");
+          //
+          //   const provider = new ethers.providers.Web3Provider(window.ethereum);
+          //   const signer = provider.getSigner();
+          //   const ethRegistrarControllerContract = new ethers.Contract(ETHREGISTRARCONTROLLERADDRESS, ETHREGISTRARCONTROLLERABI, provider);
+          //   const ethRegistrarControllerContractWithSigner = ethRegistrarControllerContract.connect(provider.getSigner());
+          //
+          //   const name = "bokky";
+          //   const duration = 12345;
+          //   const rentPrice = await ethRegistrarControllerContract.rentPrice(name, duration);
+          //   console.log("rentPrice: " + rentPrice);
+          // },
 
           async halt() {
             this.sync.halt = true;
