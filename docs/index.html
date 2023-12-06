@@ -1231,7 +1231,8 @@
           contracts: [
             // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
             // { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
@@ -1884,7 +1885,7 @@
                         const labelIndex = labelToIndex[label];
                         record = [eventTypeIndex, nameIndex, labelIndex, cost.toString(), parseInt(expires)];
 
-                  } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS) && eventType == "OwnershipTransferred") {
+                  } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS) && eventType == "OwnershipTransferred") {
                     // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                     // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                     const [previousOwner, newOwner] = logData.args;
@@ -1981,6 +1982,35 @@
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ApprovalForAll") {
                       // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
                       record = [eventTypeIndex];
+
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ControllerChanged") {
+                      // event Controllable.ControllerChanged(address indexed controller, bool active);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "NameWrapped") {
+                      // event INameWrapper.NameWrapped(bytes32 indexed node, bytes name, address owner, uint32 fuses, uint64 expiry);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "NameUnwrapped") {
+                      // event INameWrapper.NameUnwrapped(bytes32 indexed node, address owner);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "TransferSingle") {
+                      // event IERC1155.TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "TransferBatch") {
+                      // event IERC1155.TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ApprovalForAll") {
+                      // event IERC1155.ApprovalForAll(address indexed account, address indexed operator, bool approved);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "Approval") {
+                      // event IERC721.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "FusesSet") {
+                      // event INameWrapper.FusesSet(bytes32 indexed node, uint32 fuses);
+                      record = [eventTypeIndex];
+                    } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ExpiryExtended") {
+                      // event INameWrapper.ExpiryExtended(bytes32 indexed node, uint64 expiry);
+                      record = [eventTypeIndex];
+
 
                     // } else if (eventType == "Assign") {
                     //   const [to, punkIndex] = logData.args;
