@@ -2514,9 +2514,9 @@
               hashToIndex[address] = index;
             }
             Vue.set(this, 'hashToIndex', hashToIndex);
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToString: " + JSON.stringify(this.indexToString, null, 2));
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - stringToIndex['ethereumdex']: " + JSON.stringify(this.stringToIndex['ethereumdex'], null, 2));
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToHash: " + JSON.stringify(this.indexToHash, null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToString[0..9]: " + JSON.stringify(this.indexToString.slice(0, 10), null, 2));
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - stringToIndex['ethereumdex']: " + JSON.stringify(this.stringToIndex['ethereumdex'], null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToHash[0..9]: " + JSON.stringify(this.indexToHash.slice(0, 10), null, 2));
             db.close();
           },
 
