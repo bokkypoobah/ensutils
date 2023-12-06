@@ -1230,8 +1230,8 @@
           ],
           contracts: [
             // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
             // { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
@@ -1847,33 +1847,30 @@
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     let record = null;
                     // --- ETHRegistrarController ---
-                    if (eventType == "NameRegistered") {
-                      if (event.address == ETHREGISTRARCONTROLLERADDRESS) {
-                        // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
-                        const [name, label, owner, baseCost, premium, expires] = logData.args;
-                        if (!(name in nameToIndex)) {
-                          nameToIndex[name] = indexToName.length;
-                          indexToName.push(name);
-                        }
-                        const nameIndex = nameToIndex[name];
-                        if (!(label in labelToIndex)) {
-                          labelToIndex[label] = indexToLabel.length;
-                          indexToLabel.push(label);
-                        }
-                        const labelIndex = labelToIndex[label];
-                        if (!(owner in addressToIndex)) {
-                          addressToIndex[owner] = indexToAddress.length;
-                          newAddressIndexes.push(indexToAddress.length);
-                          indexToAddress.push(owner);
-                        }
-                        const ownerIndex = addressToIndex[owner];
-                        record = [eventTypeIndex, nameIndex, labelIndex, ownerIndex, baseCost.toString(), premium.toString(), parseInt(expires)];
-                      } else {
-                        // TODO: event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
+                    if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
+                      // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
+                      // TODO: event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
+                      const [name, label, owner, baseCost, premium, expires] = logData.args;
+                      if (!(name in nameToIndex)) {
+                        nameToIndex[name] = indexToName.length;
+                        indexToName.push(name);
                       }
-                    } else if (eventType == "NameRenewed") {
-                      if (event.address == ETHREGISTRARCONTROLLERADDRESS) {
+                      const nameIndex = nameToIndex[name];
+                      if (!(label in labelToIndex)) {
+                        labelToIndex[label] = indexToLabel.length;
+                        indexToLabel.push(label);
+                      }
+                      const labelIndex = labelToIndex[label];
+                      if (!(owner in addressToIndex)) {
+                        addressToIndex[owner] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(owner);
+                      }
+                      const ownerIndex = addressToIndex[owner];
+                      record = [eventTypeIndex, nameIndex, labelIndex, ownerIndex, baseCost.toString(), premium.toString(), parseInt(expires)];
+                    } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
                         // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
+                        // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
                         const [name, label, cost, expires] = logData.args;
                         if (!(name in nameToIndex)) {
                           nameToIndex[name] = indexToName.length;
@@ -1886,9 +1883,24 @@
                         }
                         const labelIndex = labelToIndex[label];
                         record = [eventTypeIndex, nameIndex, labelIndex, cost.toString(), parseInt(expires)];
-                      } else {
-                        // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
-                      }
+
+                  } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS) && eventType == "OwnershipTransferred") {
+                    // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+                    // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+                    const [previousOwner, newOwner] = logData.args;
+                    if (!(previousOwner in addressToIndex)) {
+                      addressToIndex[previousOwner] = indexToAddress.length;
+                      newAddressIndexes.push(indexToAddress.length);
+                      indexToAddress.push(previousOwner);
+                    }
+                    const previousOwnerIndex = addressToIndex[previousOwner];
+                    if (!(newOwner in addressToIndex)) {
+                      addressToIndex[newOwner] = indexToAddress.length;
+                      newAddressIndexes.push(indexToAddress.length);
+                      indexToAddress.push(newOwner);
+                    }
+                    const newOwnerIndex = addressToIndex[newOwner];
+                    record = [eventTypeIndex, previousOwnerIndex, newOwnerIndex];
 
                     // --- PublicResolver ---
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
@@ -1948,36 +1960,27 @@
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ApprovalForAll") {
                       // event PublicResolver.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
                       record = [eventTypeIndex];
-                    // } else if (event.address != PUBLICRESOLVERADDRESS && eventType == "ApprovalForAll") {
-                      // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-                    } else if (eventType == "xApproval") {
-                      // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-                    } else if (eventType == "xTransfer") {
-                      // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-
-                    } else if (eventType == "OwnershipTransferred") {
-                      if (event.address == ETHREGISTRARCONTROLLERADDRESS) {
-                        // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-                        const [previousOwner, newOwner] = logData.args;
-                        if (!(previousOwner in addressToIndex)) {
-                          addressToIndex[previousOwner] = indexToAddress.length;
-                          newAddressIndexes.push(indexToAddress.length);
-                          indexToAddress.push(previousOwner);
-                        }
-                        const previousOwnerIndex = addressToIndex[previousOwner];
-                        if (!(newOwner in addressToIndex)) {
-                          addressToIndex[newOwner] = indexToAddress.length;
-                          newAddressIndexes.push(indexToAddress.length);
-                          indexToAddress.push(newOwner);
-                        }
-                        const newOwnerIndex = addressToIndex[newOwner];
-                        record = [eventTypeIndex, previousOwnerIndex, newOwnerIndex];
-                      }
-                      // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-                    } else if (eventType == "xControllerAdded") {
+                    } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerAdded") {
                       // event BaseRegistrarImplementation.ControllerAdded(address indexed controller);
-
+                      record = [eventTypeIndex];
+                    } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerRemoved") {
+                      // event BaseRegistrarImplementation.ControllerRemoved(address indexed controller);
+                      record = [eventTypeIndex];
+                    } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Transfer") {
+                      // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+                      record = [eventTypeIndex];
+                    } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRegistered") {
+                      // event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
+                      record = [eventTypeIndex];
+                    } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRenewed") {
+                      // event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
+                      record = [eventTypeIndex];
+                    } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Approval") {
+                      // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+                      record = [eventTypeIndex];
+                    } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ApprovalForAll") {
+                      // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+                      record = [eventTypeIndex];
 
                     // } else if (eventType == "Assign") {
                     //   const [to, punkIndex] = logData.args;
