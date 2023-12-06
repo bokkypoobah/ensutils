@@ -1229,10 +1229,10 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
             // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
-            { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
+            // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
             // { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
@@ -1847,21 +1847,30 @@
                     const eventType = logData.eventFragment.name;
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     let record = null;
+
+                    function indexiseName(name) {
+                      if (!(name in nameToIndex)) {
+                        nameToIndex[name] = indexToName.length;
+                        indexToName.push(name);
+                      }
+                      return nameToIndex[name];
+                    }
+                    function indexiseLabel(label) {
+                      if (!(label in labelToIndex)) {
+                        labelToIndex[label] = indexToLabel.length;
+                        indexToLabel.push(label);
+                      }
+                      return labelToIndex[label];
+                    }
+
                     // --- ETHRegistrarController ---
                     if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
                       // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
                       // TODO: event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
-                      if (!(name in nameToIndex)) {
-                        nameToIndex[name] = indexToName.length;
-                        indexToName.push(name);
-                      }
-                      const nameIndex = nameToIndex[name];
-                      if (!(label in labelToIndex)) {
-                        labelToIndex[label] = indexToLabel.length;
-                        indexToLabel.push(label);
-                      }
-                      const labelIndex = labelToIndex[label];
+                      const nameIndex = indexiseName(name);
+                      const labelIndex = indexiseLabel(label);
+
                       if (!(owner in addressToIndex)) {
                         addressToIndex[owner] = indexToAddress.length;
                         newAddressIndexes.push(indexToAddress.length);
@@ -1873,16 +1882,8 @@
                         // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
                         // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
                         const [name, label, cost, expires] = logData.args;
-                        if (!(name in nameToIndex)) {
-                          nameToIndex[name] = indexToName.length;
-                          indexToName.push(name);
-                        }
-                        const nameIndex = nameToIndex[name];
-                        if (!(label in labelToIndex)) {
-                          labelToIndex[label] = indexToLabel.length;
-                          indexToLabel.push(label);
-                        }
-                        const labelIndex = labelToIndex[label];
+                        const nameIndex = indexiseName(name);
+                        const labelIndex = indexiseLabel(label);
                         record = [eventTypeIndex, nameIndex, labelIndex, cost.toString(), parseInt(expires)];
 
                   } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS) && eventType == "OwnershipTransferred") {
