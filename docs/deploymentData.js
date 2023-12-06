@@ -9,6 +9,15 @@ const PUBLICRESOLVERABI = [{"inputs":[{"internalType":"contract ENS","name":"_en
 const PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER = 16925619; // Mar-28-2023 11:45:11 AM +UTC
 // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
 // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
+// event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
+// event IContentHashResolver.ContenthashChanged(bytes32 indexed node, bytes hash);
+// event INameResolver.NameChanged(bytes32 indexed node, string name);
+// event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
+// event IVersionableResolver.VersionChanged(bytes32 indexed node, uint64 newVersion);
+// event IPubkeyResolver.PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
+
+// event PublicResolver.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+// event PublicResolver.Approved(address owner, bytes32 indexed node, address indexed delegate, bool indexed approved);
 
 
 const BASEREGISTRARIMPLEMENTATIONADDRESS = "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85";

@@ -1894,7 +1894,7 @@
                         indexToAddress.push(a);
                       }
                       const aIndex = addressToIndex[a];
-                      record = [eventTypeIndex, nodeIndex, aIndex];
+                      // record = [eventTypeIndex, nodeIndex, aIndex];
                     } else if (eventType == "AddressChanged") {
                       // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
                       const [node, coinType, newAddress] = logData.args;
@@ -1909,7 +1909,25 @@
                         indexToAddress.push(newAddress);
                       }
                       const newAddressIndex = addressToIndex[newAddress];
-                      record = [eventTypeIndex, nodeIndex, parseInt(coinType), newAddressIndex];
+                      // record = [eventTypeIndex, nodeIndex, parseInt(coinType), newAddressIndex];
+                    } else if (eventType == "TextChanged") {
+                      // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
+                    } else if (eventType == "ContenthashChanged") {
+                      // event IContentHashResolver.ContenthashChanged(bytes32 indexed node, bytes hash);
+                    } else if (eventType == "NameChanged") {
+                      // event INameResolver.NameChanged(bytes32 indexed node, string name);
+                    } else if (eventType == "ABIChanged") {
+                      // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
+                    } else if (eventType == "VersionChanged") {
+                      // event IVersionableResolver.VersionChanged(bytes32 indexed node, uint64 newVersion);
+                    } else if (eventType == "PubkeyChanged") {
+                      // event IPubkeyResolver.PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
+
+                    } else if (eventType == "ApprovalForAll") {
+                      // event PublicResolver.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+                    } else if (eventType == "Approved") {
+                      // event PublicResolver.Approved(address owner, bytes32 indexed node, address indexed delegate, bool indexed approved);
+
                     // } else if (eventType == "Assign") {
                     //   const [to, punkIndex] = logData.args;
                     //   if (!(to in addressToIndex)) {
@@ -2055,7 +2073,9 @@
                     } else {
                       console.log("--- UNKNOWN eventType: " + eventType + " ---");
                     }
-                    console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
+                    if (record) {
+                      console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
+                    }
                     if (record) {
                       const confirmations = latestBlockNumber - blockNumber;
                       if (!(blockNumber in events)) {
@@ -2074,7 +2094,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt && total < 20000) {
+                if (!t.sync.halt /*&& total < 50000*/) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
