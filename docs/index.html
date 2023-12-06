@@ -1848,7 +1848,8 @@
                     let record = null;
                     // --- ETHRegistrarController ---
                     if (eventType == "xNameRegistered") {
-                      // event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
+                      // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
+                      // TODO: event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
                       if (!(name in nameToIndex)) {
                         nameToIndex[name] = indexToName.length;
@@ -1868,7 +1869,8 @@
                       const ownerIndex = addressToIndex[owner];
                       record = [eventTypeIndex, nameIndex, labelIndex, ownerIndex, baseCost.toString(), premium.toString(), parseInt(expires)];
                     } else if (eventType == "xNameRenewed") {
-                      // event NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
+                      // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
+                      // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
                       const [name, label, cost, expires] = logData.args;
                       if (!(name in nameToIndex)) {
                         nameToIndex[name] = indexToName.length;
