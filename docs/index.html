@@ -1974,6 +1974,12 @@
                       // event INameWrapper.ExpiryExtended(bytes32 indexed node, uint64 expiry);
                       record = [eventTypeIndex];
 
+                    } else if (event.address == REVERSEREGISTRARADDRESS && eventType == "ReverseClaimed") {
+                      // event ReverseRegistrar.ReverseClaimed(address indexed addr, bytes32 indexed node);
+                      record = [eventTypeIndex];
+                    } else if (event.address == REVERSEREGISTRARADDRESS && eventType == "DefaultResolverChanged") {
+                      // event ReverseRegistrar.DefaultResolverChanged(NameResolver indexed resolver);
+                      record = [eventTypeIndex];
 
                     // } else if (eventType == "Assign") {
                     //   const [to, punkIndex] = logData.args;
