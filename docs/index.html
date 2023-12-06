@@ -1079,7 +1079,9 @@
           indexToAddress: [],
           txHashToIndex: {},
           indexToTxHash: [],
-          indexToName: {},
+          indexToAddressName: {},
+          indexToName: [],
+          nameToIndex: {},
           txs: [],
           tokens: {},
           offers: { "1": {}, "2": {} },
@@ -1374,7 +1376,7 @@
               const searchOwners = this.settings.filterByOwners.split(/[, \t\n]+/).map(s => new RegExp(s.toLowerCase().trim(), "i"));
               filteredOwners = {};
               for (s of searchOwners) {
-                for (const [index, name] of Object.entries(this.indexToName)) {
+                for (const [index, name] of Object.entries(this.indexToAddressName)) {
                   if (s.test(name)) {
                     filteredOwners[index] = name;
                   }
@@ -1448,7 +1450,7 @@
             if (this.settings.filterByOwners) {
               const searchOwners = this.settings.filterByOwners ? this.settings.filterByOwners.split(/[, \t\n]+/).map(s => new RegExp(s.toLowerCase(), "i")) : [];
               ownerIndexMap = {};
-              for (const [index, name] of Object.entries(this.indexToName)) {
+              for (const [index, name] of Object.entries(this.indexToAddressName)) {
                 for (const searchItem of searchOwners) {
                   if (searchItem.test(name)) {
                     ownerIndexMap[index] = name;
@@ -1599,7 +1601,7 @@
               const searchOwners = this.settings.filterByOwners ? this.settings.filterByOwners.split(/[, \t\n]+/).map(s => new RegExp(s.toLowerCase(), "i")) : [];
               results = [];
               const ownerIndexMap = {};
-              for (const [index, name] of Object.entries(this.indexToName)) {
+              for (const [index, name] of Object.entries(this.indexToAddressName)) {
                 for (const searchItem of searchOwners) {
                   if (searchItem.test(name)) {
                     ownerIndexMap[index] = name;
@@ -1651,14 +1653,14 @@
               });
             } else if (this.settings.ownersTable.sortOption == 'accountasc') {
               results.sort((a, b) => {
-                const namea = this.indexToName[a[0]] || this.indexToAddress[a[0]] || "";
-                const nameb = this.indexToName[b[0]] || this.indexToAddress[b[0]] || "";
+                const namea = this.indexToAddressName[a[0]] || this.indexToAddress[a[0]] || "";
+                const nameb = this.indexToAddressName[b[0]] || this.indexToAddress[b[0]] || "";
                 return namea.localeCompare(nameb);
               });
             } else if (this.settings.ownersTable.sortOption == 'accountdsc') {
               results.sort((a, b) => {
-                const namea = this.indexToName[a[0]] || this.indexToAddress[a[0]] || "";
-                const nameb = this.indexToName[b[0]] || this.indexToAddress[b[0]] || "";
+                const namea = this.indexToAddressName[a[0]] || this.indexToAddress[a[0]] || "";
+                const nameb = this.indexToAddressName[b[0]] || this.indexToAddress[b[0]] || "";
                 return nameb.localeCompare(namea);
               });
             }
@@ -1713,7 +1715,7 @@
           showModalAddress(addressIndex) {
             this.modalAddress.addressIndex = addressIndex;
             this.modalAddress.address = this.indexToAddress[addressIndex];
-            this.modalAddress.name = this.indexToName[addressIndex] || null;
+            this.modalAddress.name = this.indexToAddressName[addressIndex] || null;
             console.log(moment().format("HH:mm:ss") + " showModalAddress: " + addressIndex + " => " + JSON.stringify(this.modalAddress));
             this.$bvModal.show('modal-address');
           },
@@ -1763,7 +1765,7 @@
           async syncEvents(db, provider, latestBlockNumber) {
             const CONFIRMATIONS = 100;
             let indexToAddress = [];
-            let addressToIndex = {};
+            const addressToIndex = {};
             const indexToAddressDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToAddress").toArray();
             if (indexToAddressDataItems.length == 1) {
               indexToAddress = indexToAddressDataItems[0].object;
@@ -1772,12 +1774,21 @@
               }
             }
             let indexToTxHash = [];
-            let txHashToIndex = {};
+            const txHashToIndex = {};
             const indexToTxHashDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToTxHash").toArray();
             if (indexToTxHashDataItems.length == 1) {
               indexToTxHash = indexToTxHashDataItems[0].object;
               for (const [index, txHash] of indexToTxHash.entries()) {
                 txHashToIndex[txHash] = index;
+              }
+            }
+            let indexToName = [];
+            const nameToIndex = {};
+            const indexToNameDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToName").toArray();
+            if (indexToNameDataItems.length == 1) {
+              indexToName = indexToNameDataItems[0].object;
+              for (const [index, txHash] of indexToName.entries()) {
+                nameToIndex[txHash] = index;
               }
             }
             const newAddressIndexes = [];
@@ -1823,9 +1834,17 @@
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     let record = null;
                     if (eventType == "NameRegistered") {
+                      const [name, label, owner, baseCost, premium, expires] = logData.args;
                       // event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
-                      record = [eventTypeIndex];
+                      if (!(name in nameToIndex)) {
+                        nameToIndex[name] = indexToName.length;
+                        newAddressIndexes.push(indexToName.length);
+                        indexToName.push(name);
+                      }
+                      const nameIndex = nameToIndex[name];
+                      record = [eventTypeIndex, name];
                     } else if (eventType == "NameRenewed") {
+                      // const [name, label, owner, baseCost, premium, expires] = logData.args;
                       // event NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
                       record = [eventTypeIndex];
                     } else if (eventType == "Assign") {
@@ -2032,6 +2051,12 @@
               Vue.set(this, "txHashToIndex", txHashToIndex);
               Vue.set(this, "indexToTxHash", indexToTxHash);
               await db.cache.put({ objectName: this.chainId + "_indexToTxHash", object: indexToTxHash }).then (function() {
+              }).catch(function(error) {
+                console.log("error: " + error);
+              });
+              Vue.set(this, "nameToIndex", nameToIndex);
+              Vue.set(this, "indexToName", indexToName);
+              await db.cache.put({ objectName: this.chainId + "_indexToName", object: indexToName }).then (function() {
               }).catch(function(error) {
                 console.log("error: " + error);
               });
@@ -2413,7 +2438,7 @@
                   // TODO: const normalized = normalize(account);
                   if (name.length > 0) {
                     // console.log(account + " => " + name);
-                    Vue.set(this.indexToName, addressToIndex[account], name);
+                    Vue.set(this.indexToAddressName, addressToIndex[account], name);
                   }
                 }
                 start = parseInt(end) + 1;
@@ -2431,10 +2456,10 @@
             } while (!done);
 
             for (const [address, name] of Object.entries(CUSTOMNAMES)) {
-              Vue.set(this.indexToName, addressToIndex[address], name);
+              Vue.set(this.indexToAddressName, addressToIndex[address], name);
             }
-            // console.log("this.indexToName: " + JSON.stringify(this.indexToName, null, 2));
-            await db.cache.put({ objectName: CHAINID_MAINNET + "_indexToName", object: this.indexToName }).then (function() {
+            // console.log("this.indexToAddressName: " + JSON.stringify(this.indexToAddressName, null, 2));
+            await db.cache.put({ objectName: CHAINID_MAINNET + "_indexToAddressName", object: this.indexToAddressName }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
             });
@@ -2444,7 +2469,7 @@
           async loadCurrentData() {
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            for (const name of ['indexToAddress', 'indexToName', 'indexToTxHash', 'blockTimestamps', 'tokens', 'offers', 'v2Bids', 'txs', 'exchangeRates']) {
+            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToName', 'indexToTxHash', 'blockTimestamps', 'tokens', 'offers', 'v2Bids', 'txs', 'exchangeRates']) {
               console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
               const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
               if (dataItems.length == 1) {
@@ -2461,6 +2486,13 @@
               txHashToIndex[address] = index;
             }
             Vue.set(this, 'txHashToIndex', txHashToIndex);
+            const nameToIndex = {};
+            for (const [index, address] of this.indexToName.entries()) {
+              nameToIndex[address] = index;
+            }
+            Vue.set(this, 'nameToIndex', nameToIndex);
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToName: " + JSON.stringify(this.indexToName, null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - nameToIndex['ethereumdex']: " + JSON.stringify(this.nameToIndex['ethereumdex'], null, 2));
             db.close();
           },
 
