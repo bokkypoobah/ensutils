@@ -16,8 +16,9 @@ const PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER = 16925619; // Mar-28-2023 11:45:11 AM
 // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
 // event IVersionableResolver.VersionChanged(bytes32 indexed node, uint64 newVersion);
 // event IPubkeyResolver.PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
-// event PublicResolver.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+// event IDNSRecordResolver.DNSRecordChanged(bytes32 indexed node, bytes name, uint16 resource, bytes record);
 // event PublicResolver.Approved(address owner, bytes32 indexed node, address indexed delegate, bool indexed approved);
+// event PublicResolver.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 
 
 const BASEREGISTRARIMPLEMENTATIONADDRESS = "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85";
