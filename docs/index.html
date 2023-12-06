@@ -1875,39 +1875,27 @@
                       // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
                       // TODO: event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
-                      const nameIndex = indexiseName(name);
-                      const labelIndex = indexiseLabel(label);
-                      const ownerIndex = indexiseAddress(owner);
-                      record = [eventTypeIndex, nameIndex, labelIndex, ownerIndex, baseCost.toString(), premium.toString(), parseInt(expires)];
+                      record = [eventTypeIndex, indexiseName(name), indexiseLabel(label), indexiseAddress(owner), baseCost.toString(), premium.toString(), parseInt(expires)];
                     } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
-                        // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
-                        // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
-                        const [name, label, cost, expires] = logData.args;
-                        const nameIndex = indexiseName(name);
-                        const labelIndex = indexiseLabel(label);
-                        record = [eventTypeIndex, nameIndex, labelIndex, cost.toString(), parseInt(expires)];
-
-                  } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS) && eventType == "OwnershipTransferred") {
-                    // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-                    // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-                    const [previousOwner, newOwner] = logData.args;
-                    const previousOwnerIndex = indexiseAddress(previousOwner);
-                    const newOwnerIndex = indexiseAddress(newOwner);
-                    record = [eventTypeIndex, previousOwnerIndex, newOwnerIndex];
+                      // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
+                      // TODO: event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
+                      const [name, label, cost, expires] = logData.args;
+                      record = [eventTypeIndex, indexiseName(name), indexiseLabel(label), cost.toString(), parseInt(expires)];
+                    } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS) && eventType == "OwnershipTransferred") {
+                      // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+                      // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+                      const [previousOwner, newOwner] = logData.args;
+                      record = [eventTypeIndex, indexiseAddress(previousOwner), indexiseAddress(newOwner)];
 
                     // --- PublicResolver ---
-                  } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
+                    } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
                       // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
                       const [node, a] = logData.args;
-                      const nodeIndex = indexiseLabel(node);
-                      const aIndex = indexiseAddress(a);
-                      record = [eventTypeIndex, nodeIndex, aIndex];
+                      record = [eventTypeIndex, indexiseLabel(node), indexiseAddress(a)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddressChanged") {
                       // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
                       const [node, coinType, newAddress] = logData.args;
-                      const nodeIndex = indexiseLabel(node);
-                      const newAddressIndex = indexiseAddress(newAddress);
-                      record = [eventTypeIndex, nodeIndex, parseInt(coinType), newAddressIndex];
+                      record = [eventTypeIndex, indexiseLabel(node), parseInt(coinType), indexiseAddress(newAddress)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "TextChanged") {
                       // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
                       record = [eventTypeIndex];
