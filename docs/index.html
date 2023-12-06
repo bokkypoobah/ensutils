@@ -1082,6 +1082,8 @@
           indexToAddressName: {},
           indexToName: [],
           nameToIndex: {},
+          indexToLabel: [],
+          labelToIndex: {},
           txs: [],
           tokens: {},
           offers: { "1": {}, "2": {} },
@@ -1791,6 +1793,15 @@
                 nameToIndex[txHash] = index;
               }
             }
+            let indexToLabel = [];
+            const labelToIndex = {};
+            const indexToLabelDataItems = await db.cache.where("objectName").equals(this.chainId + "_indexToLabel").toArray();
+            if (indexToLabelDataItems.length == 1) {
+              indexToLabel = indexToLabelDataItems[0].object;
+              for (const [index, txHash] of indexToLabel.entries()) {
+                labelToIndex[txHash] = index;
+              }
+            }
             const newAddressIndexes = [];
             for (const address of [ADDRESS0, this.coinbase]) {
               if (!(address in addressToIndex)) {
@@ -1834,19 +1845,42 @@
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     let record = null;
                     if (eventType == "NameRegistered") {
-                      const [name, label, owner, baseCost, premium, expires] = logData.args;
                       // event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
+                      const [name, label, owner, baseCost, premium, expires] = logData.args;
                       if (!(name in nameToIndex)) {
                         nameToIndex[name] = indexToName.length;
                         newAddressIndexes.push(indexToName.length);
                         indexToName.push(name);
                       }
                       const nameIndex = nameToIndex[name];
-                      record = [eventTypeIndex, name];
+                      if (!(label in labelToIndex)) {
+                        labelToIndex[label] = indexToLabel.length;
+                        newAddressIndexes.push(indexToLabel.length);
+                        indexToLabel.push(label);
+                      }
+                      const labelIndex = labelToIndex[label];
+                      if (!(owner in addressToIndex)) {
+                        addressToIndex[owner] = indexToAddress.length;
+                        indexToAddress.push(owner);
+                      }
+                      const ownerIndex = addressToIndex[owner];
+                      record = [eventTypeIndex, nameIndex, labelIndex, ownerIndex, baseCost.toString(), premium.toString(), parseInt(expires)];
                     } else if (eventType == "NameRenewed") {
-                      // const [name, label, owner, baseCost, premium, expires] = logData.args;
                       // event NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
-                      record = [eventTypeIndex];
+                      const [name, label, cost, expires] = logData.args;
+                      if (!(name in nameToIndex)) {
+                        nameToIndex[name] = indexToName.length;
+                        newAddressIndexes.push(indexToName.length);
+                        indexToName.push(name);
+                      }
+                      const nameIndex = nameToIndex[name];
+                      if (!(label in labelToIndex)) {
+                        labelToIndex[label] = indexToLabel.length;
+                        newAddressIndexes.push(indexToLabel.length);
+                        indexToLabel.push(label);
+                      }
+                      const labelIndex = labelToIndex[label];
+                      record = [eventTypeIndex, nameIndex, labelIndex, cost.toString(), parseInt(expires)];
                     } else if (eventType == "Assign") {
                       const [to, punkIndex] = logData.args;
                       if (!(to in addressToIndex)) {
@@ -2057,6 +2091,12 @@
               Vue.set(this, "nameToIndex", nameToIndex);
               Vue.set(this, "indexToName", indexToName);
               await db.cache.put({ objectName: this.chainId + "_indexToName", object: indexToName }).then (function() {
+              }).catch(function(error) {
+                console.log("error: " + error);
+              });
+              Vue.set(this, "labelToIndex", labelToIndex);
+              Vue.set(this, "indexToLabel", indexToLabel);
+              await db.cache.put({ objectName: this.chainId + "_indexToLabel", object: indexToLabel }).then (function() {
               }).catch(function(error) {
                 console.log("error: " + error);
               });
@@ -2469,7 +2509,7 @@
           async loadCurrentData() {
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToName', 'indexToTxHash', 'blockTimestamps', 'tokens', 'offers', 'v2Bids', 'txs', 'exchangeRates']) {
+            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToName', 'indexToLabel', 'indexToTxHash', 'blockTimestamps', 'tokens', 'offers', 'v2Bids', 'txs', 'exchangeRates']) {
               console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
               const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
               if (dataItems.length == 1) {
@@ -2491,8 +2531,14 @@
               nameToIndex[address] = index;
             }
             Vue.set(this, 'nameToIndex', nameToIndex);
+            const labelToIndex = {};
+            for (const [index, address] of this.indexToLabel.entries()) {
+              labelToIndex[address] = index;
+            }
+            Vue.set(this, 'labelToIndex', labelToIndex);
             console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToName: " + JSON.stringify(this.indexToName, null, 2));
             console.log(moment().format("HH:mm:ss") + " loadCurrentData - nameToIndex['ethereumdex']: " + JSON.stringify(this.nameToIndex['ethereumdex'], null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToLabel: " + JSON.stringify(this.indexToLabel, null, 2));
             db.close();
           },
 
