@@ -1195,6 +1195,8 @@
           indexToEventTypes: [
             "NameRegistered", // 0
             "NameRenewed", // 1
+            "AddrChanged", // 2
+            "AddressChanged", // 3
             "Assign", // 0
             "Transfer", // 1
             "PunkTransfer", // 2
@@ -1227,8 +1229,8 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
             // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
@@ -1849,18 +1851,17 @@
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
                       if (!(name in nameToIndex)) {
                         nameToIndex[name] = indexToName.length;
-                        newAddressIndexes.push(indexToName.length);
                         indexToName.push(name);
                       }
                       const nameIndex = nameToIndex[name];
                       if (!(label in labelToIndex)) {
                         labelToIndex[label] = indexToLabel.length;
-                        newAddressIndexes.push(indexToLabel.length);
                         indexToLabel.push(label);
                       }
                       const labelIndex = labelToIndex[label];
                       if (!(owner in addressToIndex)) {
                         addressToIndex[owner] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
                         indexToAddress.push(owner);
                       }
                       const ownerIndex = addressToIndex[owner];
@@ -1870,17 +1871,45 @@
                       const [name, label, cost, expires] = logData.args;
                       if (!(name in nameToIndex)) {
                         nameToIndex[name] = indexToName.length;
-                        newAddressIndexes.push(indexToName.length);
                         indexToName.push(name);
                       }
                       const nameIndex = nameToIndex[name];
                       if (!(label in labelToIndex)) {
                         labelToIndex[label] = indexToLabel.length;
-                        newAddressIndexes.push(indexToLabel.length);
                         indexToLabel.push(label);
                       }
                       const labelIndex = labelToIndex[label];
                       record = [eventTypeIndex, nameIndex, labelIndex, cost.toString(), parseInt(expires)];
+                    } else if (eventType == "AddrChanged") {
+                      // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
+                      const [node, a] = logData.args;
+                      if (!(node in labelToIndex)) {
+                        labelToIndex[node] = indexToLabel.length;
+                        indexToLabel.push(node);
+                      }
+                      const nodeIndex = labelToIndex[node];
+                      if (!(a in addressToIndex)) {
+                        addressToIndex[a] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(a);
+                      }
+                      const aIndex = addressToIndex[a];
+                      record = [eventTypeIndex, nodeIndex, aIndex];
+                    } else if (eventType == "AddressChanged") {
+                      // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
+                      const [node, coinType, newAddress] = logData.args;
+                      if (!(node in labelToIndex)) {
+                        labelToIndex[node] = indexToLabel.length;
+                        indexToLabel.push(node);
+                      }
+                      const nodeIndex = labelToIndex[node];
+                      if (!(newAddress in addressToIndex)) {
+                        addressToIndex[newAddress] = indexToAddress.length;
+                        newAddressIndexes.push(indexToAddress.length);
+                        indexToAddress.push(newAddress);
+                      }
+                      const newAddressIndex = addressToIndex[newAddress];
+                      record = [eventTypeIndex, nodeIndex, parseInt(coinType), newAddressIndex];
                     // } else if (eventType == "Assign") {
                     //   const [to, punkIndex] = logData.args;
                     //   if (!(to in addressToIndex)) {
@@ -2045,7 +2074,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt) {
+                if (!t.sync.halt && total < 20000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
