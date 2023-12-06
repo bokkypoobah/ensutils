@@ -1189,6 +1189,8 @@
             { key: 'fields', label: 'Fields', sortable: false, thStyle: 'width: 50%;', thClass: 'text-left', tdClass: 'text-left' },
           ],
           indexToEventTypes: [
+            "NameRegistered", // 0
+            "NameRenewed", // 1
             "Assign", // 0
             "Transfer", // 1
             "PunkTransfer", // 2
@@ -1222,8 +1224,8 @@
           ],
           contracts: [
             { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
             // { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
@@ -1736,9 +1738,9 @@
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " syncIt - latestBlockNumber: " + latestBlockNumber + ", chainId: " + this.chainId);
             let newAddressIndexes = [];
-            // if (!devMode) {
-            //   newAddressIndexes = await this.syncCryptoPunksEvents(db, provider, latestBlockNumber);
-            // }
+            if (!devMode) {
+              newAddressIndexes = await this.syncEvents(db, provider, latestBlockNumber);
+            }
             // if (!devMode) {
             //   await this.syncENSNames(newAddressIndexes, db, provider);
             // }
@@ -1758,22 +1760,7 @@
             this.sync.halt = false;
           },
 
-          async syncCryptoPunksEvents(db, provider, latestBlockNumber) {
-            // v1 v2 event Assign(address indexed to, uint256 punkIndex);
-            // v1 v2 event Transfer(address indexed from, address indexed to, uint256 value);
-            // v1 v2 event PunkTransfer(address indexed from, address indexed to, uint256 punkIndex);
-            // v1 v2 event PunkOffered(uint indexed punkIndex, uint minValue, address indexed toAddress);
-            // v1 v2 event PunkNoLongerForSale(uint indexed punkIndex);
-            //    v2 event PunkBidEntered(uint indexed punkIndex, uint value, address indexed fromAddress);
-            //    v2 event PunkBidWithdrawn(uint indexed punkIndex, uint value, address indexed fromAddress);
-            // v1 v2 event PunkBought(uint indexed punkIndex, uint value, address indexed fromAddress, address indexed toAddress);
-            // w1 w2 event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-            // w1 w2 event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-            // w1 w2 event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-            // w1 w2 event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-            //    w2 event Paused(address account);
-            //    w2 event Unpaused(address account);
-            //    w2 event ProxyRegistered(address user, address proxy);
+          async syncEvents(db, provider, latestBlockNumber) {
             const CONFIRMATIONS = 100;
             let indexToAddress = [];
             let addressToIndex = {};
@@ -1794,7 +1781,7 @@
               }
             }
             const newAddressIndexes = [];
-            for (const address of [ADDRESS0, CRYPTOPUNKSV1ADDRESS, CRYPTOPUNKSV2ADDRESS, WRAPPEDCRYPTOPUNKSV1ADDRESS, WRAPPEDCRYPTOPUNKSV2ADDRESS, this.coinbase]) {
+            for (const address of [ADDRESS0, this.coinbase]) {
               if (!(address in addressToIndex)) {
                 addressToIndex[address] = indexToAddress.length;
                 newAddressIndexes.push(indexToAddress.length);
@@ -1819,7 +1806,7 @@
               let newEvents = 0;
               function processLogs(fromBlock, toBlock, logs) {
                 total = parseInt(total) + logs.length;
-                console.log(moment().format("HH:mm:ss") + " syncCryptoPunksEvents " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
+                console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
                 for (const event of logs) {
                   if (!event.removed) {
                     const logData = contract.interface.parseLog(event);
@@ -1835,7 +1822,13 @@
                     const eventType = logData.eventFragment.name;
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     let record = null;
-                    if (eventType == "Assign") {
+                    if (eventType == "NameRegistered") {
+                      // event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
+                      record = [eventTypeIndex];
+                    } else if (eventType == "NameRenewed") {
+                      // event NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
+                      record = [eventTypeIndex];
+                    } else if (eventType == "Assign") {
                       const [to, punkIndex] = logData.args;
                       if (!(to in addressToIndex)) {
                         addressToIndex[to] = indexToAddress.length;
@@ -1980,7 +1973,7 @@
                     } else {
                       console.log("--- UNKNOWN eventType: " + eventType + " ---");
                     }
-                    console.log(moment().format("HH:mm:ss") + " syncCryptoPunksEvents " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
+                    console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
                     if (record) {
                       const confirmations = latestBlockNumber - blockNumber;
                       if (!(blockNumber in events)) {
@@ -2020,7 +2013,7 @@
                 Object.keys(events).forEach(function (key) {
                   const confirmations = storedLatestBlockNumber - key;
                   if (confirmations < CONFIRMATIONS) {
-                    console.log(moment().format("HH:mm:ss") + " syncCryptoPunksEvents - Deleting low confirmations log events: " + key + " => " + confirmations + " " + JSON.stringify(events[key]));
+                    console.log(moment().format("HH:mm:ss") + " syncEvents - Deleting low confirmations log events: " + key + " => " + confirmations + " " + JSON.stringify(events[key]));
                     delete events[key];
                   }
                 });
