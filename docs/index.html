@@ -307,7 +307,7 @@
                 <div v-if="!sync.section" class="mt-0 pr-1">
                   <b-button size="sm" @click="syncIt(false)" variant="primary" v-b-popover.hover.bottom="'Sync data'">Sync</b-button>
                 </div>
-                <div v-if="false && !sync.section" class="mt-0 pr-1">
+                <div v-if="!sync.section" class="mt-0 pr-1">
                   <b-button size="sm" @click="syncIt(true)" variant="outline-primary" v-b-popover.hover.bottom="'This will do dev things'">Dev</b-button>
                 </div>
                 <div v-if="sync.section" class="mt-1 p-0" style="width: 300px;">
@@ -1769,9 +1769,9 @@
             // if (!devMode) {
             //   await this.syncExchangeRates(db);
             // }
-            if (!devMode) {
+            // if (!devMode) {
               await this.processData(db);
-            }
+            // }
             if (!devMode) {
               await this.loadCurrentData();
             }
@@ -2192,14 +2192,14 @@
                 const txData = txIndexes[txIndex];
                 const [txHashIndex, logs] = txData;
                 const events = [];
-                const contractIndexes = {};
-                const punkIds = {};
+                // const contractIndexes = {};
                 for (const logIndex of Object.keys(logs).sort((a, b) => parseInt(a) - parseInt(b))) {
                   const event = logs[logIndex];
-                  const [ contractIndex, eventType ] = [ event[0], event[1] ];
-                  if (!(contractIndex in contractIndexes)) {
-                    contractIndexes[contractIndex] = 1;
-                  }
+                  // const [ contractIndex, eventType ] = [ event[0], event[1] ];
+                  // if (!(contractIndex in contractIndexes)) {
+                  //   contractIndexes[contractIndex] = 1;
+                  // }
+                 events.push([ parseInt(logIndex), ...event ]);
                   // // Assign
                   // if (eventType == 0) {
                   //   if (!(contractIndex in tokens)) {
@@ -2342,20 +2342,22 @@
                   //
                   // }
                 }
-                const contractIndexList = Object.keys(contractIndexes).map(e => parseInt(e));
-                const punkIdList = Object.keys(punkIds).map(e => parseInt(e));
-                const txSummary = parsePunkTx(txHashIndex, events, this.addressToIndex, exchangeRate);
-                if (txSummary) {
-                  for (const [index, summary] of txSummary.entries()) {
-                    // TODO: Get rid of punkIdList
-                    txs.push([ timestamp, parseInt(blockNumber), parseInt(txIndex), index, txHashIndex, summary, contractIndexList, punkIdList, events ]);
-                  }
-                }
+                // console.log(moment().format("HH:mm:ss") + " processData - events: " + JSON.stringify(events));
+                txs.push([ timestamp, parseInt(blockNumber), parseInt(txIndex), txHashIndex, events ]);
+                // const contractIndexList = Object.keys(contractIndexes).map(e => parseInt(e));
+                // const punkIdList = Object.keys(punkIds).map(e => parseInt(e));
+                // const txSummary = parsePunkTx(txHashIndex, events, this.addressToIndex, exchangeRate);
+                // if (txSummary) {
+                //   for (const [index, summary] of txSummary.entries()) {
+                //     // TODO: Get rid of punkIdList
+                //     txs.push([ timestamp, parseInt(blockNumber), parseInt(txIndex), index, txHashIndex, summary, contractIndexList, punkIdList, events ]);
+                //   }
+                // }
               }
               this.sync.completed++;
             }
 
-            // console.log(moment().format("HH:mm:ss") + " processData - txs: " + JSON.stringify(txs));
+            console.log(moment().format("HH:mm:ss") + " processData - txs: " + JSON.stringify(txs));
             await db.cache.put({ objectName: this.chainId + "_txs", object: txs }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
@@ -2487,7 +2489,7 @@
           async loadCurrentData() {
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToString', 'indexToHash', 'indexToTxHash', 'blockTimestamps', 'exchangeRates']) {
+            for (const name of ['indexToAddress', 'indexToAddressName', 'indexToString', 'indexToHash', 'indexToTxHash', 'blockTimestamps', 'exchangeRates', 'txs']) {
               console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
               const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
               if (dataItems.length == 1) {
@@ -2514,9 +2516,10 @@
               hashToIndex[address] = index;
             }
             Vue.set(this, 'hashToIndex', hashToIndex);
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToString[0..9]: " + JSON.stringify(this.indexToString.slice(0, 10), null, 2));
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToString[0..9]: " + JSON.stringify(this.indexToString.slice(0, 10), null, 2));
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - stringToIndex['ethereumdex']: " + JSON.stringify(this.stringToIndex['ethereumdex'], null, 2));
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToHash[0..9]: " + JSON.stringify(this.indexToHash.slice(0, 10), null, 2));
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToHash[0..9]: " + JSON.stringify(this.indexToHash.slice(0, 10), null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - txs[0..9]: " + JSON.stringify(this.txs.slice(0, 10), null, 2));
             db.close();
           },
 
