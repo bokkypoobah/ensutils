@@ -1221,10 +1221,13 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
-            { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
-            { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
-            { name: "WrappedCryptoPunks V2", address: WRAPPEDCRYPTOPUNKSV2ADDRESS, abi: WRAPPEDCRYPTOPUNKSV2ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
+            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
+            // { name: "CryptoPunks V2", address: CRYPTOPUNKSV2ADDRESS, abi: CRYPTOPUNKSV2ABI, deploymentBlockNumber: CRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
+            // { name: "WrappedCryptoPunks V1", address: WRAPPEDCRYPTOPUNKSV1ADDRESS, abi: WRAPPEDCRYPTOPUNKSV1ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
+            // { name: "WrappedCryptoPunks V2", address: WRAPPEDCRYPTOPUNKSV2ADDRESS, abi: WRAPPEDCRYPTOPUNKSV2ABI, deploymentBlockNumber: WRAPPEDCRYPTOPUNKSV2DEPLOYMENTBLOCKNUMBER },
           ],
           backgroundStyles: [
             "",
@@ -1249,7 +1252,7 @@
             { value: 1, text: 'UTC Time' },
           ],
           db: {
-            name: "cryptopunksdata088k",
+            name: "ensutilsdata088a",
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
@@ -2737,12 +2740,12 @@
               // }
             }
           }
-          // (async() => {
-          //   const db = new Dexie(this.db.name);
-          //   db.version(this.db.version).stores(this.db.schemaDefinition);
-          //   await this.loadCurrentData(db);
-          //   db.close();
-          // })();
+          (async() => {
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            await this.loadCurrentData(db);
+            db.close();
+          })();
           // (async() => {
           //   // TODO: TESTING
           //   await delay(4500);
