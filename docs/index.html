@@ -1240,8 +1240,8 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
             // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
             // { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
@@ -1772,9 +1772,9 @@
             // if (!devMode) {
             //   await this.processData(db);
             // }
-            // if (!devMode) {
-            //   await this.loadCurrentData();
-            // }
+            if (!devMode) {
+              await this.loadCurrentData();
+            }
             this.sync.section = null;
             this.sync.halt = false;
           },
@@ -1888,7 +1888,6 @@
                     // --- ETHRegistrarController ---
                     if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
                       // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
-                      // TODO: event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
                       record = [eventTypeIndex, indexiseString(name), indexiseHash(label), indexiseAddress(owner), baseCost.toString(), premium.toString(), parseInt(expires)];
                     } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
@@ -1896,8 +1895,7 @@
                       const [name, label, cost, expires] = logData.args;
                       record = [eventTypeIndex, indexiseString(name), indexiseHash(label), cost.toString(), parseInt(expires)];
                     } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS || event.address == REVERSEREGISTRARADDRESS) && eventType == "OwnershipTransferred") {
-                      // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-                      // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+                      // event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                       const [previousOwner, newOwner] = logData.args;
                       record = [eventTypeIndex, indexiseAddress(previousOwner), indexiseAddress(newOwner)];
 
