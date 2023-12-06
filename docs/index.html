@@ -1848,6 +1848,13 @@
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     let record = null;
 
+                    function indexiseAddress(address) {
+                      if (!(address in addressToIndex)) {
+                        addressToIndex[address] = indexToAddress.length;
+                        indexToAddress.push(address);
+                      }
+                      return addressToIndex[address];
+                    }
                     function indexiseName(name) {
                       if (!(name in nameToIndex)) {
                         nameToIndex[name] = indexToName.length;
@@ -1870,13 +1877,7 @@
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
                       const nameIndex = indexiseName(name);
                       const labelIndex = indexiseLabel(label);
-
-                      if (!(owner in addressToIndex)) {
-                        addressToIndex[owner] = indexToAddress.length;
-                        newAddressIndexes.push(indexToAddress.length);
-                        indexToAddress.push(owner);
-                      }
-                      const ownerIndex = addressToIndex[owner];
+                      const ownerIndex = indexiseAddress(owner);
                       record = [eventTypeIndex, nameIndex, labelIndex, ownerIndex, baseCost.toString(), premium.toString(), parseInt(expires)];
                     } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
                         // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
@@ -1890,50 +1891,22 @@
                     // event ETHRegistrarController.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                     // event BaseRegistrarImplementation.OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                     const [previousOwner, newOwner] = logData.args;
-                    if (!(previousOwner in addressToIndex)) {
-                      addressToIndex[previousOwner] = indexToAddress.length;
-                      newAddressIndexes.push(indexToAddress.length);
-                      indexToAddress.push(previousOwner);
-                    }
-                    const previousOwnerIndex = addressToIndex[previousOwner];
-                    if (!(newOwner in addressToIndex)) {
-                      addressToIndex[newOwner] = indexToAddress.length;
-                      newAddressIndexes.push(indexToAddress.length);
-                      indexToAddress.push(newOwner);
-                    }
-                    const newOwnerIndex = addressToIndex[newOwner];
+                    const previousOwnerIndex = indexiseAddress(previousOwner);
+                    const newOwnerIndex = indexiseAddress(newOwner);
                     record = [eventTypeIndex, previousOwnerIndex, newOwnerIndex];
 
                     // --- PublicResolver ---
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
                       // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
                       const [node, a] = logData.args;
-                      if (!(node in labelToIndex)) {
-                        labelToIndex[node] = indexToLabel.length;
-                        indexToLabel.push(node);
-                      }
-                      const nodeIndex = labelToIndex[node];
-                      if (!(a in addressToIndex)) {
-                        addressToIndex[a] = indexToAddress.length;
-                        newAddressIndexes.push(indexToAddress.length);
-                        indexToAddress.push(a);
-                      }
-                      const aIndex = addressToIndex[a];
+                      const nodeIndex = indexiseLabel(node);
+                      const aIndex = indexiseAddress(a);
                       record = [eventTypeIndex, nodeIndex, aIndex];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddressChanged") {
                       // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
                       const [node, coinType, newAddress] = logData.args;
-                      if (!(node in labelToIndex)) {
-                        labelToIndex[node] = indexToLabel.length;
-                        indexToLabel.push(node);
-                      }
-                      const nodeIndex = labelToIndex[node];
-                      if (!(newAddress in addressToIndex)) {
-                        addressToIndex[newAddress] = indexToAddress.length;
-                        newAddressIndexes.push(indexToAddress.length);
-                        indexToAddress.push(newAddress);
-                      }
-                      const newAddressIndex = addressToIndex[newAddress];
+                      const nodeIndex = indexiseLabel(node);
+                      const newAddressIndex = indexiseAddress(newAddress);
                       record = [eventTypeIndex, nodeIndex, parseInt(coinType), newAddressIndex];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "TextChanged") {
                       // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
