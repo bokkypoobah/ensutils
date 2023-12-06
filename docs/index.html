@@ -1197,9 +1197,12 @@
             "NameRenewed", // 1
             "AddrChanged", // 2
             "AddressChanged", // 3
-            // "OwnershipTransferred", // 4
-            // "Approval", // 8
-            // "ApprovalForAll", // 9
+            "OwnershipTransferred", // 4
+            "DefaultResolverChanged",
+            "ControllerChanged",
+            "ReverseClaimed",
+            // "Approval",
+            // "ApprovalForAll",
           ],
           indexToTransactionTypes: [
             "Reserve", // 0
@@ -1838,7 +1841,7 @@
                     const logIndex = event.logIndex;
                     const eventType = logData.eventFragment.name;
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
-                    if (eventTypeIndex) {
+                    if (eventTypeIndex === undefined) {
                       console.log(moment().format("HH:mm:ss") + " syncEvents - UNHANDLED eventType:" + eventType);
                     }
                     let record = null;
