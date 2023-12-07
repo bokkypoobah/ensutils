@@ -516,7 +516,8 @@
                     </template>
                     <template #cell(timestamp)="data">
                       <font size="-1">
-                        <b-link @click="showModalTx(data.item[4]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
+                        <!-- <b-link @click="showModalTx(data.item[4]);" v-b-popover.hover.bottom="'Click for details'" target="_blank"> -->
+                        <b-link :href="'https://etherscan.io/tx/' + indexToTxHash[data.item[3]]" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
                           {{ formatTimestamp(data.item[0]) }}
                         </b-link>
                       </font>
@@ -527,10 +528,10 @@
                     </template>
 
                     <template #cell(events)="data">
-                      <span v-for="event in data.item[4]">
+                      <!-- <span v-for="event in data.item[4]">
                         {{ event }}
                       </span>
-
+ -->
                       <font size="-2">
                         <b-table small fixed striped :fields="eventLogFields" :items="data.item[4]" head-variant="light">
                           <template #cell(logIndex)="log">
@@ -538,7 +539,7 @@
                           </template>
                           <template #cell(contract)="log">
                             <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[1]]" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
-                              {{ ensOrAddress(log.item[1], 24) }}
+                              {{ ensOrAddress(log.item[1], 16) }}
                             </b-link>
                           </template>
                           <template #cell(name)="log">
@@ -546,17 +547,26 @@
                           </template>
                           <template #cell(fields)="log">
                             <span v-if="log.item[2] == 0">
-                              <!-- {{ log.item }} -->
                               {{ indexToNameLabel[log.item[3]][0] }}
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
+                                {{ ensOrAddress(log.item[4], 16) }}
+                              </b-link>
                               {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }}
+                            </span>
+                            <span v-else-if="log.item[2] == 1">
+                              {{ indexToNameLabel[log.item[3]][0] + ' ' + formatETH(log.item[4]) + ' ' + formatTimestamp(log.item[5]) }}
+                              <!-- {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }} -->
                             </span>
                             <span v-else-if="log.item[2] == 4">
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'From'" target="_blank">
-                                {{ ensOrAddress(log.item[3], 24) }}
+                                {{ ensOrAddress(log.item[3], 16) }}
                               </b-link>
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'To'" target="_blank">
-                                {{ ensOrAddress(log.item[4], 24) }}
+                                {{ ensOrAddress(log.item[4], 16) }}
                               </b-link>
+                            </span>
+                            <span v-else>
+                              Unknown: {{ log.item }}
                             </span>
                           </template>
                         </b-table>
@@ -2615,9 +2625,9 @@
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToHash[0..9]: " + JSON.stringify(this.indexToHash.slice(0, 10), null, 2));
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - txs[0..9]: " + JSON.stringify(this.txs.slice(0, 10), null, 2));
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToTxHash[0..9]: " + JSON.stringify(this.indexToTxHash.slice(0, 10), null, 2));
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToNameLabel[0..9]: " + JSON.stringify(this.indexToNameLabel.slice(0, 10), null, 2));
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - nameToIndex: " + JSON.stringify(this.nameToIndex, null, 2));
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToNameLabel: " + JSON.stringify(this.indexToNameLabel, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToNameLabel[0..9]: " + JSON.stringify(this.indexToNameLabel.slice(0, 10), null, 2));
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - nameToIndex: " + JSON.stringify(this.nameToIndex, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToNameLabel: " + JSON.stringify(this.indexToNameLabel, null, 2));
             db.close();
           },
 
