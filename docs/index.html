@@ -1958,7 +1958,6 @@
                       return nameToIndex[name];
                     }
 
-
                     // --- ETHRegistrarController ---
                     if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
                       // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
@@ -2097,8 +2096,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                // TODO: Dev
-                if (!t.sync.halt && total < 5000) {
+                if (!t.sync.halt /*&& total < 5000*/) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
