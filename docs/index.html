@@ -592,6 +592,12 @@
                                 {{ ensOrAddress(log.item[4], 16) }}
                               </b-link>
                             </span>
+                            <span v-else-if="log.item[2] == 21">
+                              <!-- PubkeyChanged -->
+                              node: {{ indexToHash[log.item[3]] }}
+                              x: {{ indexToHash[log.item[4]] }}
+                              y: {{ indexToHash[log.item[5]] }}
+                            </span>
                             <span v-else-if="log.item[2] == 26">
                               <!-- TextChanged -->
                               node: {{ indexToHash[log.item[3]] }}
@@ -2055,7 +2061,7 @@
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "NameChanged") {
                       // event INameResolver.NameChanged(bytes32 indexed node, string name);
                       const [node, name] = logData.args;
-                      record = [eventTypeIndex, indexiseHash(node), indexiseString(name)];
+                      // record = [eventTypeIndex, indexiseHash(node), indexiseString(name)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ABIChanged") {
                       // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
                       record = [eventTypeIndex];
@@ -2064,7 +2070,9 @@
                       record = [eventTypeIndex];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "PubkeyChanged") {
                       // event IPubkeyResolver.PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
-                      record = [eventTypeIndex];
+                      const [node, x, y] = logData.args;
+                      console.log("PubkeyChanged: " + node + ", x: " + x + ", y: " + y);
+                      record = [eventTypeIndex, indexiseHash(node), indexiseHash(x), indexiseHash(y)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "DNSRecordChanged") {
                       // event IDNSRecordResolver.DNSRecordChanged(bytes32 indexed node, bytes name, uint16 resource, bytes record);
                       record = [eventTypeIndex];
