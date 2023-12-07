@@ -462,7 +462,7 @@
                   </b-card> -->
 
                   <!-- :PUNKS -->
-                  <b-table v-if="settings.tabIndex == 1000 && !settings.showInfo" small fixed striped responsive hover :fields="punksFields" :items="pagedFilteredSortedPunks" show-empty empty-html="Click Sync above to retrieve contact events" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="settings.tabIndex == 1000 && !settings.showInfo" small fixed striped responsive hover :fields="punksFields" :items="pagedFilteredSortedPunks" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
                     <template #cell(punkId)="data">
                       <b-link @click="showModalPunk(data.item.punkId);" v-b-popover.hover.bottom="'Click for details'">
                         <b-badge pill variant="info">{{ data.item.punkId }}</b-badge>
@@ -510,7 +510,7 @@
                   </b-table>
 
                   <!-- :ACTIVITY -->
-                  <b-table v-if="!settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve contact events" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="!settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
                     <template #cell(number)="data">
                       {{ parseInt(data.index) + ((settings.activityTable.currentPage - 1) * settings.activityTable.pageSize) + 1 }}
                     </template>
@@ -917,7 +917,7 @@
                   </b-table>
 
                   <!-- :OWNERS -->
-                  <b-table v-if="settings.tabIndex == 1002 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve contact events" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="settings.tabIndex == 1002 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
                     <template #cell(number)="data">
                       {{ parseInt(data.index) + ((settings.ownersTable.currentPage - 1) * settings.ownersTable.pageSize) + 1 }}
                     </template>
