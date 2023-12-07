@@ -566,6 +566,13 @@
                               {{ indexToHash[log.item[3]] }}
                               {{ indexToHash[log.item[4]] }}
                             </span>
+                            <span v-else-if="log.item[2] == 11">
+                              <!-- DNSRecordChanged -->
+                              node: {{ indexToHash[log.item[3]] }}
+                              name: {{ indexToString[log.item[4]] }}
+                              resource: {{ log.item[5] }}
+                              record: {{ indexToString[log.item[6]] }}
+                            </span>
                             <span v-else-if="log.item[2] == 14">
                               <!-- NameChanged -->
                               {{ indexToHash[log.item[3]] }}
@@ -2054,24 +2061,24 @@
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
                       // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
                       const [node, a] = logData.args;
-                      // record = [eventTypeIndex, indexiseHash(node), indexiseAddress(a)];
+                      record = [eventTypeIndex, indexiseHash(node), indexiseAddress(a)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddressChanged") {
                       // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
                       const [node, coinType, newAddress] = logData.args;
-                      // record = [eventTypeIndex, indexiseHash(node), parseInt(coinType), indexiseAddress(newAddress)];
+                      record = [eventTypeIndex, indexiseHash(node), parseInt(coinType), indexiseAddress(newAddress)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "TextChanged") {
                       // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
                       const [node, indexedKey, key, value] = logData.args;
                       // console.log("TextChanged - node: " + node + ", indexedKey: " + JSON.stringify(indexedKey.hash) + ", key: " + key + ", value: " + value);
-                      // record = [eventTypeIndex, indexiseHash(node), indexiseHash(indexedKey.hash), indexiseString(key), indexiseString(value)];
+                      record = [eventTypeIndex, indexiseHash(node), indexiseHash(indexedKey.hash), indexiseString(key), indexiseString(value)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ContenthashChanged") {
                       // event IContentHashResolver.ContenthashChanged(bytes32 indexed node, bytes hash);
                       const [node, hash] = logData.args;
-                      // record = [eventTypeIndex, indexiseHash(node), indexiseHash(hash)];
+                      record = [eventTypeIndex, indexiseHash(node), indexiseHash(hash)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "NameChanged") {
                       // event INameResolver.NameChanged(bytes32 indexed node, string name);
                       const [node, name] = logData.args;
-                      // record = [eventTypeIndex, indexiseHash(node), indexiseString(name)];
+                      record = [eventTypeIndex, indexiseHash(node), indexiseString(name)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ABIChanged") {
                       // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
                       const [node, contentType] = logData.args;
@@ -2086,7 +2093,9 @@
                       record = [eventTypeIndex, indexiseHash(node), indexiseHash(x), indexiseHash(y)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "DNSRecordChanged") {
                       // event IDNSRecordResolver.DNSRecordChanged(bytes32 indexed node, bytes name, uint16 resource, bytes record);
-                      record = [eventTypeIndex];
+                      const [node, name, resource, record1] = logData.args;
+                      console.log("DNSRecordChanged - node: " + node + ", name: " + JSON.stringify(name) + ", resource: " + resource + ", record: " + JSON.stringify(record1));
+                      record = [eventTypeIndex, indexiseHash(node), indexiseString(name), parseInt(resource), indexiseString(record1)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "Approved") {
                       // event PublicResolver.Approved(address owner, bytes32 indexed node, address indexed delegate, bool indexed approved);
                       record = [eventTypeIndex];
@@ -2163,7 +2172,7 @@
                     } else {
                       console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " ? " + eventType);
                     }
-                    if (record) {
+                    if (record && eventTypeIndex != 1 && eventTypeIndex != 2 && eventTypeIndex != 6 && eventTypeIndex != 14 && eventTypeIndex != 26) {
                       const confirmations = latestBlockNumber - blockNumber;
                       if (!(blockNumber in events)) {
                         events[blockNumber] = {};
