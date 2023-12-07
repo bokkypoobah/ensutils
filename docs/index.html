@@ -547,6 +547,7 @@
                           <template #cell(fields)="log">
                             <span v-if="log.item[2] == 0">
                               {{ log.item }}
+                              <!-- {{ log.item[3] }} -->
                             </span>
                             <span v-else-if="log.item[2] == 4">
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'From'" target="_blank">
