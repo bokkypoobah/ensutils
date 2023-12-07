@@ -561,6 +561,16 @@
                                 {{ ensOrAddress(log.item[4], 16) }}
                               </b-link>
                             </span>
+                            <span v-else-if="log.item[2] == 3">
+                              <!-- Approval -->
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
+                                {{ ensOrAddress(log.item[3], 16) }}
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'Approved'" target="_blank">
+                                {{ ensOrAddress(log.item[4], 16) }}
+                              </b-link>
+                              {{ indexToHash[log.item[5]] }}
+                            </span>
                             <span v-else-if="log.item[2] == 4">
                               <!-- ApprovalForAll -->
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
@@ -587,6 +597,18 @@
                               {{ indexToHash[log.item[3]] }}
                               {{ indexToHash[log.item[4]] }}
                             </span>
+                            <span v-else-if="log.item[2] == 7">
+                              <!-- ControllerAdded -->
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
+                                {{ ensOrAddress(log.item[3], 16) }}
+                              </b-link>
+                            </span>
+                            <span v-else-if="log.item[2] == 9">
+                              <!-- ControllerRemoved -->
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
+                                {{ ensOrAddress(log.item[3], 16) }}
+                              </b-link>
+                            </span>
                             <span v-else-if="log.item[2] == 11">
                               <!-- DNSRecordChanged -->
                               node: {{ indexToHash[log.item[3]] }}
@@ -600,14 +622,24 @@
                               {{ indexToString[log.item[4]] }}
                             </span>
                             <span v-else-if="log.item[2] == 15">
-                              <!-- NameRegistered -->
-                              <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
-                                {{ indexToNameLabel[log.item[3]][0] }}
-                              </b-link>
-                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
-                                {{ ensOrAddress(log.item[4], 16) }}
-                              </b-link>
-                              {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }}
+                              <span v-if="log.item.length > 6">
+                                <!-- {OldETHRegistrarController|ETHRegistrarController}.NameRegistered -->
+                                <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
+                                  {{ indexToNameLabel[log.item[3]][0] }}
+                                </b-link>
+                                <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
+                                  {{ ensOrAddress(log.item[4], 16) }}
+                                </b-link>
+                                {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }}
+                              </span>
+                              <span v-else>
+                                <!-- BaseRegistrarImplementation.NameRegistered -->
+                                {{ indexToHash[log.item[3]] }}
+                                <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
+                                  {{ ensOrAddress(log.item[4], 16) }}
+                                </b-link>
+                                {{ formatTimestamp(log.item[5]) }}
+                              </span>
                             </span>
                             <span v-else-if="log.item[2] == 16">
                               <!-- NameRenewed -->
@@ -630,6 +662,16 @@
                               node: {{ indexToHash[log.item[3]] }}
                               x: {{ indexToHash[log.item[4]] }}
                               y: {{ indexToHash[log.item[5]] }}
+                            </span>
+                            <span v-else-if="log.item[2] == 23">
+                              <!-- Transfer -->
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'From'" target="_blank">
+                                {{ ensOrAddress(log.item[3], 16) }}
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'To'" target="_blank">
+                                {{ ensOrAddress(log.item[4], 16) }}
+                              </b-link>
+                              {{ indexToHash[log.item[5]] }}
                             </span>
                             <span v-else-if="log.item[2] == 26">
                               <!-- TextChanged -->
@@ -1369,8 +1411,8 @@
           contracts: [
             // TODO: Memory { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
             // { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
             // { name: "CryptoPunks V1", address: CRYPTOPUNKSV1ADDRESS, abi: CRYPTOPUNKSV1ABI, deploymentBlockNumber: CRYPTOPUNKSV1DEPLOYMENTBLOCKNUMBER },
@@ -2128,25 +2170,38 @@
                     // --- BaseRegistrarImplementation ---
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerAdded") {
                       // event BaseRegistrarImplementation.ControllerAdded(address indexed controller);
-                      record = [eventTypeIndex];
+                      const [controller] = logData.args;
+                      record = [eventTypeIndex, indexiseAddress(controller)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerRemoved") {
                       // event BaseRegistrarImplementation.ControllerRemoved(address indexed controller);
-                      record = [eventTypeIndex];
+                      const [controller] = logData.args;
+                      record = [eventTypeIndex, indexiseAddress(controller)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Transfer") {
                       // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-                      record = [eventTypeIndex];
+                      // record = [eventTypeIndex];
+                      const [from, to, id] = logData.args;
+                      const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                      // record = [eventTypeIndex, indexiseAddress(from), indexiseAddress(to), indexiseHash(idInHex)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRegistered") {
                       // event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
-                      record = [eventTypeIndex];
+                      const [id, owner, expires] = logData.args;
+                      const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                      // record = [eventTypeIndex, indexiseHash(idInHex), indexiseAddress(owner), parseInt(expires)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRenewed") {
                       // event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
-                      record = [eventTypeIndex];
+                      const [id, expires] = logData.args;
+                      const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                      record = [eventTypeIndex, indexiseHash(idInHex), parseInt(expires)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Approval") {
                       // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-                      record = [eventTypeIndex];
+                      const [owner, approved, id] = logData.args;
+                      const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                      record = [eventTypeIndex, indexiseAddress(owner), indexiseAddress(approved), indexiseHash(idInHex)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ApprovalForAll") {
                       // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-                      record = [eventTypeIndex];
+                      const [owner, operator, approved] = logData.args;
+                      const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                      record = [eventTypeIndex, indexiseAddress(owner), indexiseAddress(operator), indexiseHash(idInHex)];
 
                     // --- NameWrapper ---
                     } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ControllerChanged") {
@@ -2215,7 +2270,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt /*&& total < 150000*/) {
+                if (!t.sync.halt && total < 100000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
