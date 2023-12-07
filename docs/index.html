@@ -2324,7 +2324,7 @@
                     } else {
                       console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " ? " + eventType);
                     }
-                    if (record && eventTypeIndex != 4 && eventTypeIndex != 12 && eventTypeIndex != 13 && eventTypeIndex != 17 && eventTypeIndex != 18 && eventTypeIndex != 20 && eventTypeIndex != 24 && eventTypeIndex != 25) {
+                    if (record) {
                       const confirmations = latestBlockNumber - blockNumber;
                       if (!(blockNumber in events)) {
                         events[blockNumber] = {};
@@ -2342,7 +2342,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt && total < 200000) {
+                if (!t.sync.halt && total < 100000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
