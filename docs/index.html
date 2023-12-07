@@ -673,6 +673,20 @@
                               </b-link>
                               {{ indexToHash[log.item[5]] }}
                             </span>
+                            <span v-else-if="log.item[2] == 25">
+                              <!-- TransferSingle -->
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'Operator'" target="_blank">
+                                {{ ensOrAddress(log.item[3], 16) }}
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'From'" target="_blank">
+                                {{ ensOrAddress(log.item[4], 16) }}
+                              </b-link>
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[5]]" v-b-popover.hover.bottom="'To'" target="_blank">
+                                {{ ensOrAddress(log.item[5], 16) }}
+                              </b-link>
+                              {{ indexToHash[log.item[6]] }}
+                              {{ log.item[7] }}
+                            </span>
                             <span v-else-if="log.item[2] == 26">
                               <!-- TextChanged -->
                               node: {{ indexToHash[log.item[3]] }}
