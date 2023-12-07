@@ -1951,8 +1951,8 @@
 
                     function indexiseNameLabel(name, label) {
                       if (!(name in nameToIndex)) {
-                        nameToIndex[name] = indexToString.length;
-                        labelToIndex[label] = indexToString.length;
+                        nameToIndex[name] = indexToNameLabel.length;
+                        labelToIndex[label] = indexToNameLabel.length;
                         indexToNameLabel.push([name, label]);
                       }
                       return nameToIndex[name];
@@ -2098,7 +2098,7 @@
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
                 // TODO: Dev
-                if (!t.sync.halt /*&& total < 20000*/) {
+                if (!t.sync.halt && total < 5000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
