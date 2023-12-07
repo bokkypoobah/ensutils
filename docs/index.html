@@ -542,7 +542,22 @@
                             {{ indexToEventTypes[log.item[2]] }}
                           </template>
                           <template #cell(fields)="log">
-                            <span v-if="log.item[2] == 15">
+                            <span v-if="log.item[2] == 1">
+                              <!-- AddressChanged -->
+                              {{ indexToHash[log.item[3]] }} cointype: {{ log.item[4] }}
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[5]]" v-b-popover.hover.bottom="'New Address'" target="_blank">
+                                {{ ensOrAddress(log.item[5], 16) }}
+                              </b-link>
+                            </span>
+                            <span v-else-if="log.item[2] == 2">
+                              <!-- AddrChanged -->
+                              {{ indexToHash[log.item[3]] }}
+                              <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'Address'" target="_blank">
+                                {{ ensOrAddress(log.item[4], 16) }}
+                              </b-link>
+                            </span>
+                            <span v-else-if="log.item[2] == 15">
+                              <!-- NameRegistered -->
                               <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
                                 {{ indexToNameLabel[log.item[3]][0] }}
                               </b-link>
@@ -552,12 +567,14 @@
                               {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }}
                             </span>
                             <span v-else-if="log.item[2] == 16">
+                              <!-- NameRenewed -->
                               <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
                                 {{ indexToNameLabel[log.item[3]][0] }}
                               </b-link>
                               {{ formatETH(log.item[4]) + ' ' + formatTimestamp(log.item[5]) }}
                             </span>
-                            <span v-else-if="log.item[2] == 19">
+                            <span v-else-if="log.item[2] == 20">
+                              <!-- OwnershipTransferred -->
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'From'" target="_blank">
                                 {{ ensOrAddress(log.item[3], 16) }}
                               </b-link>
@@ -1260,14 +1277,15 @@
             "NameRenewed", // 16
             "NameUnwrapped", // 17
             "NameWrapped", // 18
-            "OwnershipTransferred", // 19
-            "PubkeyChanged", // 20
-            "ReverseClaimed", // 21
-            "Transfer", // 22
-            "TransferBatch", // 23
-            "TransferSingle", // 24
-            "TextChanged", // 25
-            "VersionChanged", // 26
+            "NewPriceOracle", // 19
+            "OwnershipTransferred", // 20
+            "PubkeyChanged", // 21
+            "ReverseClaimed", // 22
+            "Transfer", // 23
+            "TransferBatch", // 24
+            "TransferSingle", // 25
+            "TextChanged", // 26
+            "VersionChanged", // 27
           ],
           indexToTransactionTypes: [
             "Reserve", // 0
@@ -1288,9 +1306,9 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            // TODO: Memory { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
             // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
             // { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
@@ -1979,6 +1997,10 @@
                       // event OldETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint cost, uint expires);
                       const [name, label, cost, expires] = logData.args;
                       record = [eventTypeIndex, indexiseNameLabel(name, label), cost.toString(), parseInt(expires)];
+                    } else if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NewPriceOracle") {
+                      // event OldETHRegistrarController.NewPriceOracle(address indexed oracle);
+                      const [oracle] = logData.args;
+                      record = [eventTypeIndex, indexiseAddress(oracle)];
 
                     // --- ETHRegistrarController ---
                     } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
