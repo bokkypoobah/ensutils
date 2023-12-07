@@ -1288,7 +1288,8 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
             // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
@@ -1893,7 +1894,7 @@
               }
             }
             const newAddressIndexes = [];
-            for (const address of [ADDRESS0, ETHREGISTRARCONTROLLERADDRESS, PUBLICRESOLVERADDRESS, BASEREGISTRARIMPLEMENTATIONADDRESS, NAMEWRAPPERADDRESS, REVERSEREGISTRARADDRESS, this.coinbase]) {
+            for (const address of [ADDRESS0, OLDETHREGISTRARCONTROLLERADDRESS, ETHREGISTRARCONTROLLERADDRESS, PUBLICRESOLVERADDRESS, BASEREGISTRARIMPLEMENTATIONADDRESS, NAMEWRAPPERADDRESS, REVERSEREGISTRARADDRESS, this.coinbase]) {
               if (!(address in addressToIndex)) {
                 addressToIndex[address] = indexToAddress.length;
                 newAddressIndexes.push(indexToAddress.length);
@@ -1969,8 +1970,18 @@
                       return nameToIndex[name];
                     }
 
+                    // --- OldETHRegistrarController ---
+                    if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
+                      // event OldETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint cost, uint expires);
+                      const [name, label, owner, cost, expires] = logData.args;
+                      record = [eventTypeIndex, indexiseNameLabel(name, label), indexiseAddress(owner), cost.toString(), "0", parseInt(expires)];
+                    } else if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
+                      // event OldETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint cost, uint expires);
+                      const [name, label, cost, expires] = logData.args;
+                      record = [eventTypeIndex, indexiseNameLabel(name, label), cost.toString(), parseInt(expires)];
+
                     // --- ETHRegistrarController ---
-                    if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
+                    } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
                       // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
                       const [name, label, owner, baseCost, premium, expires] = logData.args;
                       record = [eventTypeIndex, indexiseNameLabel(name, label), indexiseAddress(owner), baseCost.toString(), premium.toString(), parseInt(expires)];
@@ -1978,7 +1989,8 @@
                       // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
                       const [name, label, cost, expires] = logData.args;
                       record = [eventTypeIndex, indexiseNameLabel(name, label), cost.toString(), parseInt(expires)];
-                    } else if ((event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS || event.address == REVERSEREGISTRARADDRESS) && eventType == "OwnershipTransferred") {
+
+                    } else if ((event.address == OLDETHREGISTRARCONTROLLERADDRESS || event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS || event.address == REVERSEREGISTRARADDRESS) && eventType == "OwnershipTransferred") {
                       // event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
                       const [previousOwner, newOwner] = logData.args;
                       record = [eventTypeIndex, indexiseAddress(previousOwner), indexiseAddress(newOwner)];
