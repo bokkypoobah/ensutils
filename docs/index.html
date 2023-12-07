@@ -561,6 +561,11 @@
                               {{ indexToHash[log.item[3]] }}
                               {{ indexToHash[log.item[4]] }}
                             </span>
+                            <span v-else-if="log.item[2] == 14">
+                              <!-- NameChanged -->
+                              {{ indexToHash[log.item[3]] }}
+                              {{ indexToString[log.item[4]] }}
+                            </span>
                             <span v-else-if="log.item[2] == 15">
                               <!-- NameRegistered -->
                               <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
@@ -2033,23 +2038,24 @@
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
                       // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
                       const [node, a] = logData.args;
-                      record = [eventTypeIndex, indexiseHash(node), indexiseAddress(a)];
+                      // record = [eventTypeIndex, indexiseHash(node), indexiseAddress(a)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddressChanged") {
                       // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
                       const [node, coinType, newAddress] = logData.args;
-                      record = [eventTypeIndex, indexiseHash(node), parseInt(coinType), indexiseAddress(newAddress)];
+                      // record = [eventTypeIndex, indexiseHash(node), parseInt(coinType), indexiseAddress(newAddress)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "TextChanged") {
                       // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
                       const [node, indexedKey, key, value] = logData.args;
                       // console.log("TextChanged - node: " + node + ", indexedKey: " + JSON.stringify(indexedKey.hash) + ", key: " + key + ", value: " + value);
-                      record = [eventTypeIndex, indexiseHash(node), indexiseHash(indexedKey.hash), indexiseString(key), indexiseString(value)];
+                      // record = [eventTypeIndex, indexiseHash(node), indexiseHash(indexedKey.hash), indexiseString(key), indexiseString(value)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ContenthashChanged") {
                       // event IContentHashResolver.ContenthashChanged(bytes32 indexed node, bytes hash);
                       const [node, hash] = logData.args;
-                      record = [eventTypeIndex, indexiseHash(node), indexiseHash(hash)];
+                      // record = [eventTypeIndex, indexiseHash(node), indexiseHash(hash)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "NameChanged") {
                       // event INameResolver.NameChanged(bytes32 indexed node, string name);
-                      record = [eventTypeIndex];
+                      const [node, name] = logData.args;
+                      record = [eventTypeIndex, indexiseHash(node), indexiseString(name)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ABIChanged") {
                       // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
                       record = [eventTypeIndex];
@@ -2156,7 +2162,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt && total < 30000) {
+                if (!t.sync.halt && total < 60000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
