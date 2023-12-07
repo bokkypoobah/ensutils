@@ -2203,7 +2203,8 @@
                       record = [eventTypeIndex];
                     } else if (event.address == NAMEWRAPPERADDRESS && eventType == "NameWrapped") {
                       // event INameWrapper.NameWrapped(bytes32 indexed node, bytes name, address owner, uint32 fuses, uint64 expiry);
-                      record = [eventTypeIndex];
+                      const [node, name, owner, fuses, expiry] = logData.args;
+                      record = [eventTypeIndex, indexiseHash(node), indexiseAddress(owner), parseInt(fuses), parseInt(expiry)];
                     } else if (event.address == NAMEWRAPPERADDRESS && eventType == "NameUnwrapped") {
                       // event INameWrapper.NameUnwrapped(bytes32 indexed node, address owner);
                       record = [eventTypeIndex];
@@ -2221,7 +2222,10 @@
                       record = [eventTypeIndex, indexiseAddress(account), indexiseAddress(operator), approved ? 1 : 0];
                     } else if (event.address == NAMEWRAPPERADDRESS && eventType == "Approval") {
                       // event IERC721.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-                      record = [eventTypeIndex];
+                      const [owner, approved, id] = logData.args;
+                      const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                      record = [eventTypeIndex, indexiseAddress(owner), indexiseAddress(approved), indexiseHash(idInHex)];
+
                     } else if (event.address == NAMEWRAPPERADDRESS && eventType == "FusesSet") {
                       // event INameWrapper.FusesSet(bytes32 indexed node, uint32 fuses);
                       record = [eventTypeIndex];
