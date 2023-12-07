@@ -2178,15 +2178,14 @@
                       record = [eventTypeIndex, indexiseAddress(controller)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Transfer") {
                       // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-                      // record = [eventTypeIndex];
                       const [from, to, id] = logData.args;
                       const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                      // record = [eventTypeIndex, indexiseAddress(from), indexiseAddress(to), indexiseHash(idInHex)];
+                      record = [eventTypeIndex, indexiseAddress(from), indexiseAddress(to), indexiseHash(idInHex)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRegistered") {
                       // event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
                       const [id, owner, expires] = logData.args;
                       const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                      // record = [eventTypeIndex, indexiseHash(idInHex), indexiseAddress(owner), parseInt(expires)];
+                      record = [eventTypeIndex, indexiseHash(idInHex), indexiseAddress(owner), parseInt(expires)];
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRenewed") {
                       // event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
                       const [id, expires] = logData.args;
@@ -2200,8 +2199,7 @@
                     } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ApprovalForAll") {
                       // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
                       const [owner, operator, approved] = logData.args;
-                      const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                      record = [eventTypeIndex, indexiseAddress(owner), indexiseAddress(operator), indexiseHash(idInHex)];
+                      record = [eventTypeIndex, indexiseAddress(owner), indexiseAddress(operator), approved ? 1 : 0];
 
                     // --- NameWrapper ---
                     } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ControllerChanged") {
@@ -2270,7 +2268,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt && total < 100000) {
+                if (!t.sync.halt && total < 300000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
