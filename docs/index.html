@@ -454,12 +454,12 @@
                     </b-card-body>
                   </b-card>
 
-                  <b-card no-body class="my-1 p-1">
+                  <!-- <b-card no-body class="my-1 p-1">
                     <b-card-body class="mt-1 p-1">
-                      <h4>Something Something</h4>
+                      <h4>Something Something</h4> -->
                       <!-- <b-link size="sm" @click="doSomething" variant="link" v-b-popover.hover.bottom="'Click to do something'">Do Something</b-link> -->
-                    </b-card-body>
-                  </b-card>
+                    <!-- </b-card-body>
+                  </b-card> -->
 
                   <!-- :PUNKS -->
                   <b-table v-if="settings.tabIndex == 1000 && !settings.showInfo" small fixed striped responsive hover :fields="punksFields" :items="pagedFilteredSortedPunks" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
@@ -510,10 +510,7 @@
                   </b-table>
 
                   <!-- :ACTIVITY -->
-                  <b-table v-if="settings.tabIndex == 1001 && !settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
-                    <template #head(timestamp)="data">
-                      When
-                    </template>
+                  <b-table v-if="!settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve punk history" head-variant="light" class="mx-0 my-1">
                     <template #cell(number)="data">
                       {{ parseInt(data.index) + ((settings.activityTable.currentPage - 1) * settings.activityTable.pageSize) + 1 }}
                     </template>
@@ -522,14 +519,14 @@
                         <b-link @click="showModalTx(data.item[4]);" v-b-popover.hover.bottom="'Click for details'" target="_blank">
                           {{ formatTimestamp(data.item[0]) }}
                         </b-link>
-                        <!-- <font size="-2">
-                          <b-link @click="showModalTx(data.item[4]);">🔍</b-link>
-                        </font> -->
                       </font>
                       <br />
                       <font size="-2">
-                        {{ data.item[1] + ':' + data.item[2] + '.' + data.item[3] + ':' + indexToTxHash[data.item[4]] }}
+                        {{ data.item[1] + ':' + data.item[2] + ':' + indexToTxHash[data.item[3]] }}
                       </font>
+                    </template>
+                    <template #cell(events)="data">
+                      {{ data.item }}
                     </template>
                     <template #cell(action)="data">
                       <font size="-1">
@@ -1163,11 +1160,11 @@
           activityFields: [
             { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
             { key: 'timestamp', label: 'When', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
-            { key: 'action', label: 'Action', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
-            { key: 'from', label: 'From', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
-            { key: 'to', label: 'To', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
-            { key: 'punk', label: 'Punk', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
-            { key: 'value', label: 'Value', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            // { key: 'action', label: 'Action', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
+            // { key: 'from', label: 'From', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
+            // { key: 'to', label: 'To', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
+            // { key: 'punk', label: 'Punk', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+            // { key: 'value', label: 'Value', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
             { key: 'events', label: 'Events', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'text-left' },
           ],
           ownersFields: [
@@ -1455,7 +1452,7 @@
             return this.filteredSortedPunks.slice((this.settings.punksTable.currentPage - 1) * this.settings.punksTable.pageSize, this.settings.punksTable.currentPage * this.settings.punksTable.pageSize);
           },
 
-          filteredActivity() {
+          filteredActivityOld() {
             const results = [];
             let filteredIds = {};
             for (const punkId of this.filteredPunkIds) {
@@ -1515,33 +1512,38 @@
             // console.log(moment().format("HH:mm:ss") + " filteredActivity - results: " + JSON.stringify(results.slice(0, 10)) + ", ...");
             return results;
           },
+
+          filteredActivity() {
+            return this.txs;
+          },
+
           filteredSortedActivity() {
             let results = this.filteredActivity;
-            if (this.settings.activityTable.sortOption == 'txorderasc') {
-              results.sort((a, b) => {
-                if (a[1] == b[1]) {
-                  if (a[2] == b[2]) {
-                    return a[3] - b[3];
-                  } else {
-                    return a[2] - b[2];
-                  }
-                } else {
-                  return a[1] - b[1];
-                }
-              });
-            } else if (this.settings.activityTable.sortOption == 'txorderdsc') {
-              results.sort((a, b) => {
-                if (a[1] == b[1]) {
-                  if (a[2] == b[2]) {
-                    return b[3] - a[3];
-                  } else {
-                    return b[2] - a[2];
-                  }
-                } else {
-                  return b[1] - a[1];
-                }
-              });
-            }
+            // if (this.settings.activityTable.sortOption == 'txorderasc') {
+            //   results.sort((a, b) => {
+            //     if (a[1] == b[1]) {
+            //       if (a[2] == b[2]) {
+            //         return a[3] - b[3];
+            //       } else {
+            //         return a[2] - b[2];
+            //       }
+            //     } else {
+            //       return a[1] - b[1];
+            //     }
+            //   });
+            // } else if (this.settings.activityTable.sortOption == 'txorderdsc') {
+            //   results.sort((a, b) => {
+            //     if (a[1] == b[1]) {
+            //       if (a[2] == b[2]) {
+            //         return b[3] - a[3];
+            //       } else {
+            //         return b[2] - a[2];
+            //       }
+            //     } else {
+            //       return b[1] - a[1];
+            //     }
+            //   });
+            // }
             return results;
           },
           pagedFilteredSortedActivity() {
@@ -2520,6 +2522,7 @@
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - stringToIndex['ethereumdex']: " + JSON.stringify(this.stringToIndex['ethereumdex'], null, 2));
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToHash[0..9]: " + JSON.stringify(this.indexToHash.slice(0, 10), null, 2));
             console.log(moment().format("HH:mm:ss") + " loadCurrentData - txs[0..9]: " + JSON.stringify(this.txs.slice(0, 10), null, 2));
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - indexToTxHash[0..9]: " + JSON.stringify(this.indexToTxHash.slice(0, 10), null, 2));
             db.close();
           },
 
