@@ -556,6 +556,11 @@
                                 {{ ensOrAddress(log.item[4], 16) }}
                               </b-link>
                             </span>
+                            <span v-else-if="log.item[2] == 6">
+                              <!-- ContenthashChanged -->
+                              {{ indexToHash[log.item[3]] }}
+                              {{ indexToHash[log.item[4]] }}
+                            </span>
                             <span v-else-if="log.item[2] == 15">
                               <!-- NameRegistered -->
                               <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
@@ -581,6 +586,13 @@
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'To'" target="_blank">
                                 {{ ensOrAddress(log.item[4], 16) }}
                               </b-link>
+                            </span>
+                            <span v-else-if="log.item[2] == 26">
+                              <!-- TextChanged -->
+                              node: {{ indexToHash[log.item[3]] }}
+                              indexedKey: {{ indexToHash[log.item[4]] }}
+                              key: {{ indexToString[log.item[5]] }}
+                              value: {{ indexToString[log.item[6]] }}
                             </span>
                             <span v-else>
                               Unknown: {{ log.item }}
@@ -2028,10 +2040,13 @@
                       record = [eventTypeIndex, indexiseHash(node), parseInt(coinType), indexiseAddress(newAddress)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "TextChanged") {
                       // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
-                      record = [eventTypeIndex];
+                      const [node, indexedKey, key, value] = logData.args;
+                      // console.log("TextChanged - node: " + node + ", indexedKey: " + JSON.stringify(indexedKey.hash) + ", key: " + key + ", value: " + value);
+                      record = [eventTypeIndex, indexiseHash(node), indexiseHash(indexedKey.hash), indexiseString(key), indexiseString(value)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ContenthashChanged") {
                       // event IContentHashResolver.ContenthashChanged(bytes32 indexed node, bytes hash);
-                      record = [eventTypeIndex];
+                      const [node, hash] = logData.args;
+                      record = [eventTypeIndex, indexiseHash(node), indexiseHash(hash)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "NameChanged") {
                       // event INameResolver.NameChanged(bytes32 indexed node, string name);
                       record = [eventTypeIndex];
@@ -2141,7 +2156,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt /*&& total < 5000*/) {
+                if (!t.sync.halt && total < 30000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
@@ -2765,14 +2780,14 @@
           ensOrAddress(addressOrAddressIndex, length = 0) {
             let result = null;
             if (new RegExp('^[0-9,]+$').test(addressOrAddressIndex)) {
-              if (addressOrAddressIndex in this.indexToString) {
-                result = this.indexToString[addressOrAddressIndex];
+              if (addressOrAddressIndex in this.indexToAddressName) {
+                result = this.indexToAddressName[addressOrAddressIndex];
               } else {
                 result = this.indexToAddress[addressOrAddressIndex];
               }
             } else {
               if (addressOrAddressIndex in this.addressToIndex) {
-                result = this.indexToString[this.addressToIndex[addressOrAddressIndex]] || addressOrAddressIndex;
+                result = this.indexToAddressName[this.addressToIndex[addressOrAddressIndex]] || addressOrAddressIndex;
               } else {
                 result = addressOrAddressIndex;
               }
