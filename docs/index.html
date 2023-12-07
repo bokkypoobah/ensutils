@@ -605,6 +605,11 @@
                               key: {{ indexToString[log.item[5]] }}
                               value: {{ indexToString[log.item[6]] }}
                             </span>
+                            <span v-else-if="log.item[2] == 27">
+                              <!-- VersionChanged -->
+                              node: {{ indexToHash[log.item[3]] }}
+                              version: {{ log.item[4] }}
+                            </span>
                             <span v-else>
                               Unknown: {{ log.item }}
                             </span>
@@ -2067,11 +2072,11 @@
                       record = [eventTypeIndex];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "VersionChanged") {
                       // event IVersionableResolver.VersionChanged(bytes32 indexed node, uint64 newVersion);
-                      record = [eventTypeIndex];
+                      const [node, newVersion] = logData.args;
+                      record = [eventTypeIndex, indexiseHash(node), parseInt(newVersion)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "PubkeyChanged") {
                       // event IPubkeyResolver.PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
                       const [node, x, y] = logData.args;
-                      console.log("PubkeyChanged: " + node + ", x: " + x + ", y: " + y);
                       record = [eventTypeIndex, indexiseHash(node), indexiseHash(x), indexiseHash(y)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "DNSRecordChanged") {
                       // event IDNSRecordResolver.DNSRecordChanged(bytes32 indexed node, bytes name, uint16 resource, bytes record);
@@ -2170,7 +2175,7 @@
               }
               const t = this;
               async function getLogs(fromBlock, toBlock, processLogs, section) {
-                if (!t.sync.halt && total < 60000) {
+                if (!t.sync.halt && total < 100000) {
                   try {
                     const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                     const eventLogs = await provider.getLogs(filter);
