@@ -528,10 +528,6 @@
                     </template>
 
                     <template #cell(events)="data">
-                      <!-- <span v-for="event in data.item[4]">
-                        {{ event }}
-                      </span>
- -->
                       <font size="-2">
                         <b-table small fixed striped :fields="eventLogFields" :items="data.item[4]" head-variant="light">
                           <template #cell(logIndex)="log">
@@ -547,15 +543,19 @@
                           </template>
                           <template #cell(fields)="log">
                             <span v-if="log.item[2] == 0">
-                              {{ indexToNameLabel[log.item[3]][0] }}
+                              <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
+                                {{ indexToNameLabel[log.item[3]][0] }}
+                              </b-link>
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[4]]" v-b-popover.hover.bottom="'Owner'" target="_blank">
                                 {{ ensOrAddress(log.item[4], 16) }}
                               </b-link>
                               {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }}
                             </span>
                             <span v-else-if="log.item[2] == 1">
-                              {{ indexToNameLabel[log.item[3]][0] + ' ' + formatETH(log.item[4]) + ' ' + formatTimestamp(log.item[5]) }}
-                              <!-- {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }} -->
+                              <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
+                                {{ indexToNameLabel[log.item[3]][0] }}
+                              </b-link>
+                              {{ formatETH(log.item[4]) + ' ' + formatTimestamp(log.item[5]) }}
                             </span>
                             <span v-else-if="log.item[2] == 4">
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'From'" target="_blank">
