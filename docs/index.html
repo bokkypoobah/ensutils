@@ -542,7 +542,7 @@
                             {{ indexToEventTypes[log.item[2]] }}
                           </template>
                           <template #cell(fields)="log">
-                            <span v-if="log.item[2] == 0">
+                            <span v-if="log.item[2] == 15">
                               <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
                                 {{ indexToNameLabel[log.item[3]][0] }}
                               </b-link>
@@ -551,13 +551,13 @@
                               </b-link>
                               {{ formatETH(log.item[5]) + ' + ' + formatETH(log.item[6]) + ' ' + formatTimestamp(log.item[7]) }}
                             </span>
-                            <span v-else-if="log.item[2] == 1">
+                            <span v-else-if="log.item[2] == 16">
                               <b-link :href="'https://app.ens.domains/' + indexToNameLabel[log.item[3]][0] + '.eth'" v-b-popover.hover.bottom="'Open in ENS app'" target="_blank">
                                 {{ indexToNameLabel[log.item[3]][0] }}
                               </b-link>
                               {{ formatETH(log.item[4]) + ' ' + formatTimestamp(log.item[5]) }}
                             </span>
-                            <span v-else-if="log.item[2] == 4">
+                            <span v-else-if="log.item[2] == 19">
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[3]]" v-b-popover.hover.bottom="'From'" target="_blank">
                                 {{ ensOrAddress(log.item[3], 16) }}
                               </b-link>
@@ -1241,33 +1241,33 @@
             { key: 'fields', label: 'Fields', sortable: false, thStyle: 'width: 50%;', thClass: 'text-left', tdClass: 'text-left' },
           ],
           indexToEventTypes: [
-            "NameRegistered", // 0
-            "NameRenewed", // 1
+            "ABIChanged", // 0
+            "AddressChanged", // 1
             "AddrChanged", // 2
-            "AddressChanged", // 3
-            "OwnershipTransferred", // 4
-            "DefaultResolverChanged",
-            "ControllerAdded",
-            "ControllerChanged",
-            "ControllerRemoved",
-            "ReverseClaimed",
-            "NameWrapped",
-            "NameUnwrapped",
-            "FusesSet",
-            "ExpiryExtended",
-            "Transfer",
-            "TransferSingle",
-            "TransferBatch",
-            "Approved",
-            "Approval",
-            "ApprovalForAll",
-            "TextChanged",
-            "ContenthashChanged",
-            "NameChanged",
-            "PubkeyChanged",
-            "DNSRecordChanged",
-            "VersionChanged",
-            "ABIChanged",
+            "Approval", // 3
+            "ApprovalForAll", // 4
+            "Approved", // 5
+            "ContenthashChanged", // 6
+            "ControllerAdded", // 7
+            "ControllerChanged", // 8
+            "ControllerRemoved", // 9
+            "DefaultResolverChanged", // 10
+            "DNSRecordChanged", // 11
+            "ExpiryExtended", // 12
+            "FusesSet", // 13
+            "NameChanged", // 14
+            "NameRegistered", // 15
+            "NameRenewed", // 16
+            "NameUnwrapped", // 17
+            "NameWrapped", // 18
+            "OwnershipTransferred", // 19
+            "PubkeyChanged", // 20
+            "ReverseClaimed", // 21
+            "Transfer", // 22
+            "TransferBatch", // 23
+            "TransferSingle", // 24
+            "TextChanged", // 25
+            "VersionChanged", // 26
           ],
           indexToTransactionTypes: [
             "Reserve", // 0
