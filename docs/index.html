@@ -2197,7 +2197,7 @@
                     } else {
                       console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " ? " + eventType);
                     }
-                    if (record && eventTypeIndex != 0 && eventTypeIndex != 1 && eventTypeIndex != 2 && eventTypeIndex != 6 && eventTypeIndex != 11 && eventTypeIndex != 14 && eventTypeIndex != 21 && eventTypeIndex != 26 && eventTypeIndex != 27) {
+                    if (record) {
                       const confirmations = latestBlockNumber - blockNumber;
                       if (!(blockNumber in events)) {
                         events[blockNumber] = {};
