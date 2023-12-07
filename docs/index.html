@@ -542,7 +542,12 @@
                             {{ indexToEventTypes[log.item[2]] }}
                           </template>
                           <template #cell(fields)="log">
-                            <span v-if="log.item[2] == 1">
+                            <span v-if="log.item[2] == 0">
+                              <!-- ABIChanged -->
+                              node: {{ indexToHash[log.item[3]] }}
+                              contentType: {{ log.item[4] }}
+                            </span>
+                            <span v-else-if="log.item[2] == 1">
                               <!-- AddressChanged -->
                               {{ indexToHash[log.item[3]] }} cointype: {{ log.item[4] }}
                               <b-link :href="'https://etherscan.io/address/' + indexToAddress[log.item[5]]" v-b-popover.hover.bottom="'New Address'" target="_blank">
@@ -2069,7 +2074,8 @@
                       // record = [eventTypeIndex, indexiseHash(node), indexiseString(name)];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ABIChanged") {
                       // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
-                      record = [eventTypeIndex];
+                      const [node, contentType] = logData.args;
+                      record = [eventTypeIndex, indexiseHash(node), contentType.toString()];
                     } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "VersionChanged") {
                       // event IVersionableResolver.VersionChanged(bytes32 indexed node, uint64 newVersion);
                       const [node, newVersion] = logData.args;
