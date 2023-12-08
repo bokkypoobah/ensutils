@@ -2019,7 +2019,7 @@
           },
 
           async syncEventsNew(db, provider, latestBlockNumber) {
-            const CONFIRMATIONS = 10000;
+            const CONFIRMATIONS = 100;
             let total = 0;
             async function processLogs(t, db, process, fromBlock, toBlock, logs) {
               const contract = new ethers.Contract(process.address, process.abi, provider);
@@ -2030,6 +2030,7 @@
                 if (!event.removed) {
                   const logData = contract.interface.parseLog(event);
                   const blockNumber = event.blockNumber;
+                  const confirmed = (parseInt(blockNumber) + CONFIRMATIONS) <= latestBlockNumber;
                   const txIndex = event.transactionIndex;
                   const logIndex = event.logIndex;
                   const txHash = event.transactionHash;
@@ -2199,7 +2200,6 @@
 
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
                   if (record) {
-                    const confirmed = parseInt(blockNumber) + CONFIRMATIONS > latestBlockNumber;
                     records.push({ blockNumber: parseInt(blockNumber), confirmed, logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash, contract: event.address, eventType, ...record });
                   }
                 }
@@ -2233,8 +2233,9 @@
               // const data = await db.events.toArray();
               // console.log("data: " + JSON.stringify(data));
 
-              const data = await db.events.toArray();
-              console.log("data: " + JSON.stringify(data));
+              // const data = await db.events.toArray();
+              const data = await db.events.where('contract').equals(process.address).toArray();
+              console.log("data.length: " + data.length);
 
 
               const startBlock = process.deploymentBlockNumber;
@@ -2242,7 +2243,7 @@
               this.sync.total = latestBlockNumber;
               this.sync.completed = startBlock;
               total = 0;
-              await getLogs(this, db, process, startBlock, latestBlockNumber);
+              // await getLogs(this, db, process, startBlock, latestBlockNumber);
             }
           },
 
