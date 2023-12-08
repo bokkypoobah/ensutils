@@ -2229,15 +2229,15 @@
             }
 
 
-            let data = await db.events.toArray();
-            console.log(moment().format("HH:mm:ss") + " syncEventsNew - data.length before deletion: " + data.length);
+            // let data = await db.events.toArray();
+            // console.log(moment().format("HH:mm:ss") + " syncEventsNew - data.length before deletion: " + data.length);
 
             await db.events.where('confirmations').below(CONFIRMATIONS).delete();
             // const data = await db.events.where('confirmations').below(CONFIRMATIONS).toArray();
             // console.log("data.length: " + data.length);
 
-            data = await db.events.toArray();
-            console.log(moment().format("HH:mm:ss") + " syncEventsNew - data.length after deletion: " + data.length);
+            // data = await db.events.toArray();
+            // console.log(moment().format("HH:mm:ss") + " syncEventsNew - data.length after deletion: " + data.length);
 
             for (const process of this.contracts) {
 
