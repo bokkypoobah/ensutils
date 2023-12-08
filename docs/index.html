@@ -2021,6 +2021,7 @@
 
             let total = 0;
             function processLogs(process, fromBlock, toBlock, logs) {
+              const contract = new ethers.Contract(process.address, process.abi, provider);
               total = parseInt(total) + logs.length;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
             }
@@ -2044,7 +2045,6 @@
             }
 
             for (const process of this.contracts) {
-              const contract = new ethers.Contract(process.address, process.abi, provider);
               const startBlock = process.deploymentBlockNumber;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew - process: " + process.name + ", startBlock: " + startBlock);
               await getLogs(this, process, startBlock, latestBlockNumber);
