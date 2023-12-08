@@ -2255,7 +2255,7 @@
               this.sync.total = latestBlockNumber;
               this.sync.completed = startBlock;
               total = 0;
-              // await getLogs(this, db, process, startBlock, latestBlockNumber);
+              await getLogs(this, db, process, startBlock, latestBlockNumber);
             }
           },
 
