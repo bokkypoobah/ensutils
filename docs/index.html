@@ -1473,8 +1473,8 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            // TODO: Memory { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
             // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
@@ -2019,7 +2019,6 @@
           },
 
           async syncEventsNew(db, provider, latestBlockNumber) {
-
             let total = 0;
             async function processLogs(t, db, process, fromBlock, toBlock, logs) {
               const contract = new ethers.Contract(process.address, process.abi, provider);
@@ -2035,24 +2034,36 @@
                   const txHash = event.transactionHash;
                   const eventType = logData.eventFragment.name;
                   const eventTypeIndex = t.eventTypesToIndex[eventType];
+                  let record = {};
+                  if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
+                    // event OldETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint cost, uint expires);
+                    const [name, label, owner, cost, expires] = logData.args;
+                    record = { name, label, owner, cost: cost.toString(), expires: parseInt(expires) };
+                  } else if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
+                  //   // event OldETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint cost, uint expires);
+                    const [name, label, cost, expires] = logData.args;
+                    record = { name, label, cost: cost.toString(), expires: parseInt(expires) };
+
+                  // --- ETHRegistrarController ---
+                  } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
+                    // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
+                    const [name, label, owner, baseCost, premium, expires] = logData.args;
+                    record = { name, label, owner, baseCost: baseCost.toString(), premium: premium.toString(), expires: parseInt(expires) };
+                  } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
+                    // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
+                    const [name, label, cost, expires] = logData.args;
+                    record = { name, label, cost: cost.toString(), expires: parseInt(expires) };
+                  }
+
                   console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
-                  records.push({ blockNumber: parseInt(blockNumber), logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash });
+                  records.push({ blockNumber: parseInt(blockNumber), logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash, contract: event.address, eventType, ...record });
                 }
               }
               console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - records: " + JSON.stringify(records));
-
               await db.events.bulkPut(records).then (function() {
               }).catch(function(error) {
                 console.log("error: " + error);
               });
-
-              // name: "ensutilsdata088c",
-              // version: 1,
-              // schemaDefinition: {
-              //   cache: '&objectName',
-              //   events: '[blockNumber,logIndex]',
-              // },
-              // updated: null,
             }
 
             async function getLogs(t, db, process, fromBlock, toBlock) {
