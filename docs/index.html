@@ -1474,11 +1474,11 @@
           ],
           contracts: [
             { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
-            // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
-            // { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
+            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
+            { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
           ],
           backgroundStyles: [
             "",
@@ -1503,11 +1503,11 @@
             { value: 1, text: 'UTC Time' },
           ],
           db: {
-            name: "ensutilsdata088c",
+            name: "ensutilsdata088d",
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
-              events: '[blockNumber+logIndex]',
+              events: '[blockNumber+logIndex],contract',
             },
             updated: null,
           },
@@ -2019,6 +2019,7 @@
           },
 
           async syncEventsNew(db, provider, latestBlockNumber) {
+            const CONFIRMATIONS = 10000;
             let total = 0;
             async function processLogs(t, db, process, fromBlock, toBlock, logs) {
               const contract = new ethers.Contract(process.address, process.abi, provider);
@@ -2198,7 +2199,8 @@
 
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
                   if (record) {
-                    records.push({ blockNumber: parseInt(blockNumber), latestBlockNumber, logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash, contract: event.address, eventType, ...record });
+                    const confirmed = parseInt(blockNumber) + CONFIRMATIONS > latestBlockNumber;
+                    records.push({ blockNumber: parseInt(blockNumber), confirmed, logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash, contract: event.address, eventType, ...record });
                   }
                 }
               }
@@ -2227,10 +2229,19 @@
             }
 
             for (const process of this.contracts) {
+
+              // const data = await db.events.toArray();
+              // console.log("data: " + JSON.stringify(data));
+
+              const data = await db.events.toArray();
+              console.log("data: " + JSON.stringify(data));
+
+
               const startBlock = process.deploymentBlockNumber;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew - process: " + process.name + ", startBlock: " + startBlock);
               this.sync.total = latestBlockNumber;
               this.sync.completed = startBlock;
+              total = 0;
               await getLogs(this, db, process, startBlock, latestBlockNumber);
             }
           },
