@@ -1475,8 +1475,8 @@
           contracts: [
             // { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
             // { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
           ],
@@ -2105,41 +2105,39 @@
                     const [owner, operator, approved] = logData.args;
                     record = { owner, operator, approved };
 
-                  // // --- BaseRegistrarImplementation ---
-                  // } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerAdded") {
-                  //   // event BaseRegistrarImplementation.ControllerAdded(address indexed controller);
-                  //   const [controller] = logData.args;
-                  //   record = [eventTypeIndex, indexiseAddress(controller)];
-                  // } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerRemoved") {
-                  //   // event BaseRegistrarImplementation.ControllerRemoved(address indexed controller);
-                  //   const [controller] = logData.args;
-                  //   record = [eventTypeIndex, indexiseAddress(controller)];
-                  // } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Transfer") {
-                  //   // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-                  //   const [from, to, id] = logData.args;
-                  //   const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                  //   record = [eventTypeIndex, indexiseAddress(from), indexiseAddress(to), indexiseHash(idInHex)];
-                  // } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRegistered") {
-                  //   // event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
-                  //   const [id, owner, expires] = logData.args;
-                  //   const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                  //   record = [eventTypeIndex, indexiseHash(idInHex), indexiseAddress(owner), parseInt(expires)];
-                  // } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRenewed") {
-                  //   // event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
-                  //   const [id, expires] = logData.args;
-                  //   const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                  //   record = [eventTypeIndex, indexiseHash(idInHex), parseInt(expires)];
-                  // } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Approval") {
-                  //   // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-                  //   const [owner, approved, id] = logData.args;
-                  //   const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                  //   record = [eventTypeIndex, indexiseAddress(owner), indexiseAddress(approved), indexiseHash(idInHex)];
-                  // } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ApprovalForAll") {
-                  //   // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-                  //   const [owner, operator, approved] = logData.args;
-                  //   record = [eventTypeIndex, indexiseAddress(owner), indexiseAddress(operator), approved ? 1 : 0];
-
-
+                  // --- BaseRegistrarImplementation ---
+                  } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerAdded") {
+                    // event BaseRegistrarImplementation.ControllerAdded(address indexed controller);
+                    const [controller] = logData.args;
+                    record = { controller };
+                  } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerRemoved") {
+                    // event BaseRegistrarImplementation.ControllerRemoved(address indexed controller);
+                    const [controller] = logData.args;
+                    record = { controller };
+                  } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Transfer") {
+                    // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+                    const [from, to, id] = logData.args;
+                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    record = { from, to, id: idInHex };
+                  } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRegistered") {
+                    // event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
+                    const [id, owner, expires] = logData.args;
+                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    record = { id: idInHex, owner, expires: parseInt(expires) };
+                  } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRenewed") {
+                    // event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
+                    const [id, expires] = logData.args;
+                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    record = { id: indexiseHash(idInHex), expires: parseInt(expires) };
+                  } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Approval") {
+                    // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+                    const [owner, approved, id] = logData.args;
+                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    record = { owner, approved, id: idInHex };
+                  } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ApprovalForAll") {
+                    // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+                    const [owner, operator, approved] = logData.args;
+                    record = { owner, operator, approved };
                   }
 
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
@@ -2156,7 +2154,7 @@
             }
 
             async function getLogs(t, db, process, fromBlock, toBlock) {
-              if (!t.sync.halt /*&& total < 200000*/) {
+              if (!t.sync.halt /*&& total < 30000*/) {
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock);
                 try {
                   const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
