@@ -2241,13 +2241,13 @@
 
             for (const process of this.contracts) {
 
-              // const data = await db.events.toArray();
+              const data = await db.events.toArray();
               // console.log("data: " + JSON.stringify(data));
 
               // const data = await db.events.toArray();
               // const data = await db.events.where('contract').equals(process.address).toArray();
               // const data = await db.events.where('confirmations').below(1000).toArray();
-              // console.log("data.length: " + data.length);
+              console.log("data.length: " + data.length);
 
 
               const startBlock = process.deploymentBlockNumber;
@@ -2255,7 +2255,7 @@
               this.sync.total = latestBlockNumber;
               this.sync.completed = startBlock;
               total = 0;
-              await getLogs(this, db, process, startBlock, latestBlockNumber);
+              // await getLogs(this, db, process, startBlock, latestBlockNumber);
             }
           },
 
