@@ -2024,6 +2024,12 @@
               const contract = new ethers.Contract(process.address, process.abi, provider);
               total = parseInt(total) + logs.length;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
+              for (const event of logs) {
+                if (!event.removed) {
+                  const logData = contract.interface.parseLog(event);
+                  console.log("  " + event.blockNumber + "." + event.transactionIndex);
+                }
+              }
             }
 
             async function getLogs(t, process, fromBlock, toBlock) {
