@@ -1995,6 +1995,8 @@
             let newAddressIndexes = [];
             if (!devMode) {
               newAddressIndexes = await this.syncEvents(db, provider, latestBlockNumber);
+            } else {
+              newAddressIndexes = await this.syncEventsNew(db, provider, latestBlockNumber);
             }
             // if (!devMode) {
             //   await this.syncENSNames(newAddressIndexes, db, provider);
@@ -2005,14 +2007,25 @@
             // if (!devMode) {
             //   await this.syncExchangeRates(db);
             // }
-            // if (!devMode) {
+            if (!devMode) {
               await this.processData(db);
-            // }
+            }
             if (!devMode) {
               await this.loadCurrentData();
             }
             this.sync.section = null;
             this.sync.halt = false;
+          },
+
+          async syncEventsNew(db, provider, latestBlockNumber) {
+
+            async function getLogsA(t) {
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogsA: " + JSON.stringify(t.sync));
+            }
+
+            console.log(moment().format("HH:mm:ss") + " syncEventsNew");
+            await getLogsA(this);
+
           },
 
           async syncEvents(db, provider, latestBlockNumber) {
@@ -2818,7 +2831,7 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             for (const name of ['indexToAddress', 'indexToAddressName', 'indexToNameLabel', 'indexToString', 'indexToHash', 'indexToTxHash', 'blockTimestamps', 'exchangeRates', 'txs']) {
-              console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
+              // console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
               const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
               if (dataItems.length == 1) {
                 Vue.set(this, name, dataItems[0].object);
