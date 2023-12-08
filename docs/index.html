@@ -1503,10 +1503,11 @@
             { value: 1, text: 'UTC Time' },
           ],
           db: {
-            name: "ensutilsdata088b",
+            name: "ensutilsdata088c",
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
+              events: '[blockNumber+logIndex]',
             },
             updated: null,
           },
@@ -2020,32 +2021,53 @@
           async syncEventsNew(db, provider, latestBlockNumber) {
 
             let total = 0;
-            function processLogs(process, fromBlock, toBlock, logs) {
+            async function processLogs(t, db, process, fromBlock, toBlock, logs) {
               const contract = new ethers.Contract(process.address, process.abi, provider);
               total = parseInt(total) + logs.length;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
+              const records = [];
               for (const event of logs) {
                 if (!event.removed) {
                   const logData = contract.interface.parseLog(event);
-                  console.log("  " + event.blockNumber + "." + event.transactionIndex);
+                  const blockNumber = event.blockNumber;
+                  const txIndex = event.transactionIndex;
+                  const logIndex = event.logIndex;
+                  const txHash = event.transactionHash;
+                  const eventType = logData.eventFragment.name;
+                  const eventTypeIndex = t.eventTypesToIndex[eventType];
+                  console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
+                  records.push({ blockNumber: parseInt(blockNumber), logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash });
                 }
               }
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - records: " + JSON.stringify(records));
+
+              await db.events.bulkPut(records).then (function() {
+              }).catch(function(error) {
+                console.log("error: " + error);
+              });
+
+              // name: "ensutilsdata088c",
+              // version: 1,
+              // schemaDefinition: {
+              //   cache: '&objectName',
+              //   events: '[blockNumber,logIndex]',
+              // },
+              // updated: null,
             }
 
-            async function getLogs(t, process, fromBlock, toBlock) {
+            async function getLogs(t, db, process, fromBlock, toBlock) {
               if (!t.sync.halt && total < 10000) {
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock + ", process: " + process.name);
                 try {
                   const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                   const logs = await provider.getLogs(filter);
-                  // console.log("logs: " + JSON.stringify(logs));
-                  processLogs(process, fromBlock, toBlock, logs);
-                  // t.sync.section = section;
-                  // t.sync.completed = toBlock;
+                  await processLogs(t, db, process, fromBlock, toBlock, logs);
+                  t.sync.section = process.name;
+                  t.sync.completed = toBlock;
                 } catch (e) {
                   const mid = parseInt((fromBlock + toBlock) / 2);
-                  await getLogs(t, process, fromBlock, mid);
-                  await getLogs(t, process, parseInt(mid) + 1, toBlock);
+                  await getLogs(t, db, process, fromBlock, mid);
+                  await getLogs(t, db, process, parseInt(mid) + 1, toBlock);
                 }
               }
             }
@@ -2053,7 +2075,9 @@
             for (const process of this.contracts) {
               const startBlock = process.deploymentBlockNumber;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew - process: " + process.name + ", startBlock: " + startBlock);
-              await getLogs(this, process, startBlock, latestBlockNumber);
+              this.sync.total = latestBlockNumber;
+              this.sync.completed = startBlock;
+              await getLogs(this, db, process, startBlock, latestBlockNumber);
             }
           },
 
