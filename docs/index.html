@@ -2733,10 +2733,28 @@
           async processDataNew(db) {
             const BATCHSIZE = 1000;
             const DEVMAX = 500;
-            const WRITESIZE = 10;
+            const WRITESIZE = 1;
             console.log(moment().format("HH:mm:ss") + " processDataNew BEGIN");
             // let data = await db.events.toArray();
             // console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first: " + JSON.stringify(data[0]));
+
+            function makeTx(events) {
+              console.log(moment().format("HH:mm:ss") + " processDataNew - makeTx()");
+              const tx = {};
+              if (events.length > 0) {
+                tx.blockNumber = events[0].blockNumber;
+                tx.confirmations = events[0].confirmations;
+                tx.txIndex = events[0].txIndex;
+                tx.txHash = events[0].txHash;
+                const newEvents = [];
+                for (const event of events) {
+                  newEvents.push({ ...event, blockNumber: undefined, txIndex: undefined, txHash: undefined, confirmations: undefined });
+                }
+                tx.events = newEvents;
+
+              }
+              return tx;
+            }
 
             let rows = 0;
             let done = false;
@@ -2749,9 +2767,12 @@
               for (const item of data) {
                 if (lastTxHash != null && lastTxHash != item.txHash) {
                   console.log("  Write " + lastTxHash + " " + events.map(e => e.logIndex));
-                  txs.push({ txHash: lastTxHash, events });
-                  if (txs.length > WRITESIZE) {
-                    console.log("    Batch Write " + JSON.stringify(txs.map(e => e.txHash)));
+                  // txs.push({ txHash: lastTxHash, events });
+                  txs.push(makeTx(events));
+                  if (txs.length >= WRITESIZE) {
+                    console.log("    Batch Write " + JSON.stringify(txs));
+                    // console.log("    Batch Write " + JSON.stringify(txs.map(e => e.txHash)));
+                    // await dumpIt(events);
                     txs = [];
                   }
                   events = [];
@@ -2764,8 +2785,11 @@
               done = data.length < BATCHSIZE || (DEVMAX != 0 && rows > DEVMAX);
             } while (!done);
             console.log("  FINAL Write " + lastTxHash + " " + events.map(e => e.logIndex));
-            txs.push({ txHash: lastTxHash, events });
-            console.log("    FINAL Batch Write " + JSON.stringify(txs.map(e => e.txHash)));
+            // txs.push({ txHash: lastTxHash, events });
+            txs.push(makeTx(events));
+            // console.log("    FINAL Batch Write " + JSON.stringify(txs.map(e => e.txHash)));
+            console.log("    FINAL Batch Write " + JSON.stringify(txs));
+            // await dumpIt(events);
 
 
           },
