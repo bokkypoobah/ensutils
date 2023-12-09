@@ -1998,7 +1998,7 @@
             if (!devMode) {
               newAddressIndexes = await this.syncEvents(db, provider, latestBlockNumber);
             } else {
-              // newAddressIndexes = await this.syncEventsNew(db, provider, latestBlockNumber);
+              newAddressIndexes = await this.syncEventsNew(db, provider, latestBlockNumber);
             }
             // if (!devMode) {
             //   await this.syncENSNames(newAddressIndexes, db, provider);
@@ -2255,12 +2255,12 @@
               }
             }
 
-            const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
-            console.log(moment().format("HH:mm:ss") + " syncEventsNew - deleted: " + deleted);
-
-            const SKIPSCRAPING = true;
-
-            if (!SKIPSCRAPING) {
+            const latest = await db.events.limit(1).last();
+            console.log(moment().format("HH:mm:ss") + " syncEventsNew - latest: " + JSON.stringify(latest));
+            if (!latest) {
+              const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew - deleted: " + deleted);
+              
               for (const process of this.contracts) {
                 // let data = await db.events.where('contract').equals(process.address).toArray();
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew - before count()");
