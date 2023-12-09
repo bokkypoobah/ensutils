@@ -2769,7 +2769,7 @@
             const excludeTxHashes = {};
             do {
               let data = await db.events.offset(rows).limit(BATCHSIZE).toArray();
-              // console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               // console.log(moment().format("HH:mm:ss") + " processDataNew - data[0]: " + JSON.stringify(data[0]));
               // console.log(moment().format("HH:mm:ss") + " processDataNew - data[" + (data.length - 1) + "]: " + JSON.stringify(data[(data.length - 1)]));
               let existingTxs = await db.txs.where("[blockNumber+txIndex]").between([data[0].blockNumber, Dexie.minKey], [data[(data.length - 1)].blockNumber, Dexie.maxKey]).toArray();
@@ -2809,12 +2809,13 @@
             // } else {
             //   console.log(moment().format("HH:mm:ss") + " FINAL Excluding: " + events[0].txHash);
             }
-            console.log(moment().format("HH:mm:ss") + " FINAL Batch Write " + txs.length + " " + (txs.length > 0 && [0].blockNumber || ""));
-            await db.txs.bulkPut(txs).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-
+            if (txs.length > 0) {
+              console.log(moment().format("HH:mm:ss") + " FINAL Batch Write " + txs.length + " " + [0].blockNumber);
+              await db.txs.bulkPut(txs).then (function() {
+              }).catch(function(error) {
+                console.log("error: " + error);
+              });
+            }
             console.log(moment().format("HH:mm:ss") + " processDataNew END");
           },
 
