@@ -2733,18 +2733,39 @@
           async processDataNew(db) {
             const BATCHSIZE = 1000;
             const DEVMAX = 500;
+            const WRITESIZE = 10;
             console.log(moment().format("HH:mm:ss") + " processDataNew BEGIN");
             // let data = await db.events.toArray();
             // console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first: " + JSON.stringify(data[0]));
 
             let rows = 0;
             let done = false;
+            let lastTxHash = null;
+            let events = [];
+            let txs = [];
             do {
               let data = await db.events.offset(rows).limit(BATCHSIZE).toArray();
               console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const item of data) {
+                if (lastTxHash != null && lastTxHash != item.txHash) {
+                  console.log("  Write " + lastTxHash + " " + events.map(e => e.logIndex));
+                  txs.push({ txHash: lastTxHash, events });
+                  if (txs.length > WRITESIZE) {
+                    console.log("    Batch Write " + JSON.stringify(txs.map(e => e.txHash)));
+                    txs = [];
+                  }
+                  events = [];
+                }
+                lastTxHash = item.txHash;
+                events.push(item);
+                console.log(moment().format("HH:mm:ss") + " processDataNew: " + item.blockNumber + "." + item.txIndex + "." + item.logIndex + " " + item.txHash);
+              }
               rows = parseInt(rows) + BATCHSIZE;
               done = data.length < BATCHSIZE || (DEVMAX != 0 && rows > DEVMAX);
             } while (!done);
+            console.log("  FINAL Write " + lastTxHash + " " + events.map(e => e.logIndex));
+            txs.push({ txHash: lastTxHash, events });
+            console.log("    FINAL Batch Write " + JSON.stringify(txs.map(e => e.txHash)));
 
 
           },
