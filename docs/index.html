@@ -2260,7 +2260,7 @@
             if (!latest) {
               const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
               console.log(moment().format("HH:mm:ss") + " syncEventsNew - deleted: " + deleted);
-              
+
               for (const process of this.contracts) {
                 // let data = await db.events.where('contract').equals(process.address).toArray();
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew - before count()");
@@ -2731,7 +2731,8 @@
           },
 
           async processDataNew(db) {
-            const BATCHSIZE = 10000;
+            const BATCHSIZE = 1000;
+            const DEVMAX = 500;
             console.log(moment().format("HH:mm:ss") + " processDataNew BEGIN");
             // let data = await db.events.toArray();
             // console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first: " + JSON.stringify(data[0]));
@@ -2742,7 +2743,7 @@
               let data = await db.events.offset(rows).limit(BATCHSIZE).toArray();
               console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               rows = parseInt(rows) + BATCHSIZE;
-              done = data.length < BATCHSIZE;
+              done = data.length < BATCHSIZE || (DEVMAX != 0 && rows > DEVMAX);
             } while (!done);
 
 
