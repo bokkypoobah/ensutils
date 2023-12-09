@@ -1998,7 +1998,7 @@
             if (!devMode) {
               newAddressIndexes = await this.syncEvents(db, provider, latestBlockNumber);
             } else {
-              newAddressIndexes = await this.syncEventsNew(db, provider, latestBlockNumber);
+              // newAddressIndexes = await this.syncEventsNew(db, provider, latestBlockNumber);
             }
             // if (!devMode) {
             //   await this.syncENSNames(newAddressIndexes, db, provider);
@@ -2011,6 +2011,8 @@
             // }
             if (!devMode) {
               await this.processData(db);
+            } else {
+              await this.processDataNew(db);
             }
             if (!devMode) {
               await this.loadCurrentData();
@@ -2256,22 +2258,26 @@
             const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
             console.log(moment().format("HH:mm:ss") + " syncEventsNew - deleted: " + deleted);
 
-            for (const process of this.contracts) {
-              // let data = await db.events.where('contract').equals(process.address).toArray();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - before count()");
-              let count = await db.events.where('contract').equals(process.address).count();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - before last()");
-              const last = await db.events.where('contract').equals(process.address).last();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - after last()");
-              const startBlock = last ? (parseInt(last.blockNumber) + 1) : process.deploymentBlockNumber;
-              // console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + data.length);
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
-              this.sync.total = latestBlockNumber;
-              this.sync.completed = startBlock;
-              total = 0;
-              await getLogs(this, db, process, startBlock, latestBlockNumber);
-              count = await db.events.where('contract').equals(process.address).count();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
+            const SKIPSCRAPING = true;
+
+            if (!SKIPSCRAPING) {
+              for (const process of this.contracts) {
+                // let data = await db.events.where('contract').equals(process.address).toArray();
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew - before count()");
+                let count = await db.events.where('contract').equals(process.address).count();
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew - before last()");
+                const last = await db.events.where('contract').equals(process.address).last();
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew - after last()");
+                const startBlock = last ? (parseInt(last.blockNumber) + 1) : process.deploymentBlockNumber;
+                // console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + data.length);
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
+                this.sync.total = latestBlockNumber;
+                this.sync.completed = startBlock;
+                total = 0;
+                await getLogs(this, db, process, startBlock, latestBlockNumber);
+                count = await db.events.where('contract').equals(process.address).count();
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
+              }
             }
           },
 
@@ -2722,6 +2728,24 @@
             }).catch(function(error) {
               console.log("error: " + error);
             });
+          },
+
+          async processDataNew(db) {
+            const BATCHSIZE = 10000;
+            console.log(moment().format("HH:mm:ss") + " processDataNew BEGIN");
+            // let data = await db.events.toArray();
+            // console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first: " + JSON.stringify(data[0]));
+
+            let rows = 0;
+            let done = false;
+            do {
+              let data = await db.events.offset(rows).limit(BATCHSIZE).toArray();
+              console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              rows = parseInt(rows) + BATCHSIZE;
+              done = data.length < BATCHSIZE;
+            } while (!done);
+
+
           },
 
           async processData(db) {
