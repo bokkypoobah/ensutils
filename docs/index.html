@@ -1473,12 +1473,13 @@
             "ProxyRegistered", // 15
           ],
           contracts: [
-            { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
-            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
-            { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
-            { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
-            { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
+            { name: "ENSRegistryWithFallback", address: ENSREGISTRYWITHFALLBACKADDRESS, abi: ENSREGISTRYWITHFALLBACKABI, deploymentBlockNumber: ENSREGISTRYWITHFALLBACKDEPLOYMENTBLOCKNUMBER },
+            // { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            // { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
+            // { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
+            // { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
           ],
           backgroundStyles: [
             "",
@@ -2037,7 +2038,31 @@
                   const eventType = logData.eventFragment.name;
                   const eventTypeIndex = t.eventTypesToIndex[eventType];
                   let record = null;
-                  if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
+
+                  // --- ENSRegistryWithFallback ---
+                  if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "NewOwner") {
+                    // event ENSRegistryWithFallback.NewOwner(bytes32 indexed node, bytes32 indexed label, address owner);
+                    const [node, label, owner] = logData.args;
+                    record = { node, label, owner };
+                  } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "Transfer") {
+                    // event ENSRegistryWithFallback.Transfer(bytes32 indexed node, address owner);
+                    const [node, owner] = logData.args;
+                    record = { node, owner };
+                  } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "NewResolver") {
+                    // event ENSRegistryWithFallback.NewResolver(bytes32 indexed node, address resolver);
+                    const [node, resolver] = logData.args;
+                    record = { node, resolver };
+                  } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "NewTTL") {
+                    // event ENSRegistryWithFallback.NewTTL(bytes32 indexed node, uint64 ttl);
+                    const [node, ttl] = logData.args;
+                    record = { node, ttl: parseInt(ttl) };
+                  } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "ApprovalForAll") {
+                    // event ENSRegistryWithFallback.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+                    const [owner, operator, approved] = logData.args;
+                    record = { owner, operator, approved };
+
+                  // --- OldETHRegistrarController ---
+                  } else if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
                     // event OldETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint cost, uint expires);
                     const [name, label, owner, cost, expires] = logData.args;
                     record = { name, label, owner, cost: cost.toString(), expires: parseInt(expires) };
@@ -2228,23 +2253,25 @@
               }
             }
 
-            await db.events.where('confirmations').below(CONFIRMATIONS).delete();
+            const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
+            console.log(moment().format("HH:mm:ss") + " syncEventsNew - deleted: " + deleted);
 
             for (const process of this.contracts) {
-              // const data = await db.events.where('contract').equals(process.address).toArray();
-              // console.log("data.length: " + data.length);
-              //
-              // const first = await db.events.where('contract').equals(process.address).first();
-              // console.log("first: " + JSON.stringify(first));
-              //
+              // let data = await db.events.where('contract').equals(process.address).toArray();
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew - before count()");
+              let count = await db.events.where('contract').equals(process.address).count();
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew - before last()");
               const last = await db.events.where('contract').equals(process.address).last();
-              // console.log("last: " + JSON.stringify(last));
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew - after last()");
               const startBlock = last ? (parseInt(last.blockNumber) + 1) : process.deploymentBlockNumber;
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil'));
+              // console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + data.length);
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
               this.sync.total = latestBlockNumber;
               this.sync.completed = startBlock;
               total = 0;
               await getLogs(this, db, process, startBlock, latestBlockNumber);
+              count = await db.events.where('contract').equals(process.address).count();
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
             }
           },
 
@@ -3143,7 +3170,7 @@
 
           async halt() {
             this.sync.halt = true;
-            console.log("this.sync.halt: " + this.sync.halt);
+            console.log(moment().format("HH:mm:ss") + " halt()");
           },
           commify0(n) {
             if (n != null) {
