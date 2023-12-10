@@ -2037,201 +2037,242 @@
                   const confirmations = latestBlockNumber - blockNumber;
                   const txIndex = event.transactionIndex;
                   const logIndex = event.logIndex;
-                  const txHash = event.transactionHash;
-                  const eventType = logData.eventFragment.name;
+                  // const txHash = event.transactionHash;
+                  let eventType = logData.eventFragment.name;
                   const eventTypeIndex = t.eventTypesToIndex[eventType];
                   let record = null;
 
                   // --- ENSRegistryWithFallback ---
                   if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "NewOwner") {
                     // event ENSRegistryWithFallback.NewOwner(bytes32 indexed node, bytes32 indexed label, address owner);
-                    const [node, label, owner] = logData.args;
+                    let [node, label, owner] = logData.args;
                     record = { node, label, owner };
+                    [node, label, owner] = [null, null, null];
                   } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "Transfer") {
                     // event ENSRegistryWithFallback.Transfer(bytes32 indexed node, address owner);
-                    const [node, owner] = logData.args;
+                    let [node, owner] = logData.args;
                     record = { node, owner };
+                    [node, owner] = [null, null];
                   } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "NewResolver") {
                     // event ENSRegistryWithFallback.NewResolver(bytes32 indexed node, address resolver);
-                    const [node, resolver] = logData.args;
+                    let [node, resolver] = logData.args;
                     record = { node, resolver };
+                    [node, resolver] = [null, null];
                   } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "NewTTL") {
                     // event ENSRegistryWithFallback.NewTTL(bytes32 indexed node, uint64 ttl);
-                    const [node, ttl] = logData.args;
+                    let [node, ttl] = logData.args;
                     record = { node, ttl: parseInt(ttl) };
+                    [node, ttl] = [null, null];
                   } else if (event.address == ENSREGISTRYWITHFALLBACKADDRESS && eventType == "ApprovalForAll") {
                     // event ENSRegistryWithFallback.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-                    const [owner, operator, approved] = logData.args;
+                    let [owner, operator, approved] = logData.args;
                     record = { owner, operator, approved };
+                    [owner, operator, approved] = [null, null, null];
 
                   // --- OldETHRegistrarController ---
                   } else if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
                     // event OldETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint cost, uint expires);
-                    const [name, label, owner, cost, expires] = logData.args;
+                    let [name, label, owner, cost, expires] = logData.args;
                     record = { name, label, owner, cost: cost.toString(), expires: parseInt(expires) };
+                    [name, label, owner, cost, expires] = [null, null, null, null, null];
                   } else if (event.address == OLDETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
                     // event OldETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint cost, uint expires);
-                    const [name, label, cost, expires] = logData.args;
+                    let [name, label, cost, expires] = logData.args;
                     record = { name, label, cost: cost.toString(), expires: parseInt(expires) };
+                    [name, label, cost, expires] = [null, null, null, null];
 
                   // --- ETHRegistrarController ---
                   } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRegistered") {
                     // event ETHRegistrarController.NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires);
-                    const [name, label, owner, baseCost, premium, expires] = logData.args;
+                    let [name, label, owner, baseCost, premium, expires] = logData.args;
                     record = { name, label, owner, baseCost: baseCost.toString(), premium: premium.toString(), expires: parseInt(expires) };
+                    [name, label, owner, baseCost, premium, expires] = [null, null, null, null, null, null];
                   } else if (event.address == ETHREGISTRARCONTROLLERADDRESS && eventType == "NameRenewed") {
                     // event ETHRegistrarController.NameRenewed(string name, bytes32 indexed label, uint256 cost, uint256 expires);
-                    const [name, label, cost, expires] = logData.args;
+                    let [name, label, cost, expires] = logData.args;
                     record = { name, label, cost: cost.toString(), expires: parseInt(expires) };
+                    [name, label, cost, expires] = [null, null, null, null];
 
                   } else if ((event.address == OLDETHREGISTRARCONTROLLERADDRESS || event.address == ETHREGISTRARCONTROLLERADDRESS || event.address == BASEREGISTRARIMPLEMENTATIONADDRESS || event.address == NAMEWRAPPERADDRESS || event.address == REVERSEREGISTRARADDRESS) && eventType == "OwnershipTransferred") {
                     // event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-                    const [previousOwner, newOwner] = logData.args;
+                    let [previousOwner, newOwner] = logData.args;
                     record = { previousOwner, newOwner };
+                    [previousOwner, newOwner] = [null, null];
 
                   // --- PublicResolver ---
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddrChanged") {
                     // event IAddrResolver.AddrChanged(bytes32 indexed node, address a);
-                    const [node, a] = logData.args;
+                    let [node, a] = logData.args;
                     record = { node, a };
+                    [node, a] = [null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "AddressChanged") {
                     // event IAddressResolver.AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);
-                    const [node, coinType, newAddress] = logData.args;
+                    let [node, coinType, newAddress] = logData.args;
                     record = { node, coinType: parseInt(coinType), newAddress };
+                    [node, coinType, newAddress] = [null, null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "TextChanged") {
                     // event ITextResolver.TextChanged(bytes32 indexed node, string indexed indexedKey, string key, string value);
-                    const [node, indexedKey, key, value] = logData.args;
+                    let [node, indexedKey, key, value] = logData.args;
                     record = { node, indexedKey: indexedKey.hash, key, value };
+                    [node, indexedKey, key, value] = [null, null, null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ContenthashChanged") {
                     // event IContentHashResolver.ContenthashChanged(bytes32 indexed node, bytes hash);
-                    const [node, hash] = logData.args;
+                    let [node, hash] = logData.args;
                     record = { node, hash };
+                    [node, hash] = [null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "NameChanged") {
                     // event INameResolver.NameChanged(bytes32 indexed node, string name);
-                    const [node, name] = logData.args;
+                    let [node, name] = logData.args;
                     record = { node, name };
+                    [node, name] = [null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ABIChanged") {
                     // event IABIResolver.ABIChanged(bytes32 indexed node, uint256 indexed contentType);
-                    const [node, contentType] = logData.args;
+                    let [node, contentType] = logData.args;
                     record = { node, contentType: contentType.toString() };
+                    [node, contentType] = [null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "VersionChanged") {
                     // event IVersionableResolver.VersionChanged(bytes32 indexed node, uint64 newVersion);
-                    const [node, newVersion] = logData.args;
+                    let [node, newVersion] = logData.args;
                     record = { node, newVersion: parseInt(newVersion) };
+                    [node, newVersion] = [null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "PubkeyChanged") {
                     // event IPubkeyResolver.PubkeyChanged(bytes32 indexed node, bytes32 x, bytes32 y);
-                    const [node, x, y] = logData.args;
+                    let [node, x, y] = logData.args;
                     record = { node, x, y };
+                    [node, x, y] = [null, null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "DNSRecordChanged") {
                     // event IDNSRecordResolver.DNSRecordChanged(bytes32 indexed node, bytes name, uint16 resource, bytes record);
-                    const [node, name, resource, record1] = logData.args;
+                    let [node, name, resource, record1] = logData.args;
                     record = { node, name, resource: parseInt(resource), record: record1 };
+                    [node, name, resource, record1] = [null, null, null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "Approved") {
                     // event PublicResolver.Approved(address owner, bytes32 indexed node, address indexed delegate, bool indexed approved);
-                    const [owner, node, delegate, approved] = logData.args;
+                    let [owner, node, delegate, approved] = logData.args;
                     record = { owner, node, delegate, approved };
+                    [owner, node, delegate, approved] = [null, null, null, null];
                   } else if (event.address == PUBLICRESOLVERADDRESS && eventType == "ApprovalForAll") {
                     // event PublicResolver.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-                    const [owner, operator, approved] = logData.args;
+                    let [owner, operator, approved] = logData.args;
                     record = { owner, operator, approved };
+                    [owner, operator, approved] = [null, null, null];
 
                   // --- BaseRegistrarImplementation ---
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerAdded") {
                     // event BaseRegistrarImplementation.ControllerAdded(address indexed controller);
-                    const [controller] = logData.args;
+                    let [controller] = logData.args;
                     record = { controller };
+                    [controller] = [null];
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ControllerRemoved") {
                     // event BaseRegistrarImplementation.ControllerRemoved(address indexed controller);
-                    const [controller] = logData.args;
+                    let [controller] = logData.args;
                     record = { controller };
+                    [controller] = [null];
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Transfer") {
                     // event BaseRegistrarImplementation.Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-                    const [from, to, id] = logData.args;
-                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    let [from, to, id] = logData.args;
+                    let idInHex = ethers.BigNumber.from(id.toString()).toHexString();
                     record = { from, to, id: idInHex };
+                    [from, to, id, idInHex] = [null, null, null, null];
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRegistered") {
                     // event BaseRegistrarImplementation.NameRegistered(uint256 indexed id, address indexed owner, uint expires);
-                    const [id, owner, expires] = logData.args;
-                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    let [id, owner, expires] = logData.args;
+                    let idInHex = ethers.BigNumber.from(id.toString()).toHexString();
                     record = { id: idInHex, owner, expires: parseInt(expires) };
+                    [id, owner, expires, idInHex] = [null, null, null, null];
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "NameRenewed") {
                     // event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
-                    const [id, expires] = logData.args;
-                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    let [id, expires] = logData.args;
+                    let idInHex = ethers.BigNumber.from(id.toString()).toHexString();
                     record = { id: indexiseHash(idInHex), expires: parseInt(expires) };
+                    [id, expires, idInHex] = [null, null, null];
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Approval") {
                     // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-                    const [owner, approved, id] = logData.args;
-                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    let [owner, approved, id] = logData.args;
+                    let idInHex = ethers.BigNumber.from(id.toString()).toHexString();
                     record = { owner, approved, id: idInHex };
+                    [owner, approved, id, idInHex] = [null, null, null, null];
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "ApprovalForAll") {
                     // event BaseRegistrarImplementation.ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-                    const [owner, operator, approved] = logData.args;
+                    let [owner, operator, approved] = logData.args;
                     record = { owner, operator, approved };
+                    [owner, operator, approved] = [null, null, null];
 
                   // --- NameWrapper ---
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ControllerChanged") {
                     // event Controllable.ControllerChanged(address indexed controller, bool active);
-                    const [controller, active] = logData.args;
+                    let [controller, active] = logData.args;
                     record = { controller, active };
+                    [controller, active] = [null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "NameWrapped") {
                     // event INameWrapper.NameWrapped(bytes32 indexed node, bytes name, address owner, uint32 fuses, uint64 expiry);
-                    const [node, name, owner, fuses, expiry] = logData.args;
+                    let [node, name, owner, fuses, expiry] = logData.args;
                     record = { node, name, owner, fuses: ethers.BigNumber.from(fuses.toString()).toHexString(), expiry: parseInt(expiry) };
+                    [node, name, owner, fuses, expiry] = [null, null, null, null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "NameUnwrapped") {
                     // event INameWrapper.NameUnwrapped(bytes32 indexed node, address owner);
-                    const [node, owner] = logData.args;
+                    let [node, owner] = logData.args;
                     record = { node, owner };
+                    [node, owner] = [null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "TransferSingle") {
                     // event IERC1155.TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);
-                    const [operator, from, to, id, value] = logData.args;
-                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    let [operator, from, to, id, value] = logData.args;
+                    let idInHex = ethers.BigNumber.from(id.toString()).toHexString();
                     record = { operator, from, to, id: idInHex, valud: value.toString() };
+                    [operator, from, to, id, value] = [null, null, null, null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "TransferBatch") {
                     // event IERC1155.TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values);
-                    const [operator, from, to, ids, values] = logData.args;
+                    let [operator, from, to, ids, values] = logData.args;
                     const is = ids.map(e => ethers.BigNumber.from(e.toString()).toHexString());
                     const vs = values.map(e => e.toString());
                     record = { operator, from, to, ids: is, values: vs };
+                    [operator, from, to, ids, values] = [null, null, null, null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ApprovalForAll") {
                     // event IERC1155.ApprovalForAll(address indexed account, address indexed operator, bool approved);
-                    const [account, operator, approved] = logData.args;
+                    let [account, operator, approved] = logData.args;
                     record = { account, operator, approved };
+                    [account, operator, approved] = [null, null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "Approval") {
                     // event IERC721.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-                    const [owner, approved, id] = logData.args;
-                    const idInHex = ethers.BigNumber.from(id.toString()).toHexString();
+                    let [owner, approved, id] = logData.args;
+                    let idInHex = ethers.BigNumber.from(id.toString()).toHexString();
                     record = { owner, approved, id: idInHex };
+                    [owner, approved, id] = [null, null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "FusesSet") {
                     // event INameWrapper.FusesSet(bytes32 indexed node, uint32 fuses);
-                    const [node, fuses] = logData.args;
+                    let [node, fuses] = logData.args;
                     record = { node, fuses: ethers.BigNumber.from(fuses.toString()).toHexString() };
+                    [node, fuses] = [null, null];
                   } else if (event.address == NAMEWRAPPERADDRESS && eventType == "ExpiryExtended") {
                     // event INameWrapper.ExpiryExtended(bytes32 indexed node, uint64 expiry);
-                    const [node, expiry] = logData.args;
+                    let [node, expiry] = logData.args;
                     record = { node, expiry: parseInt(expiry) };
+                    [node, expiry] = [null, null];
 
                   // --- ReverseRegistrar ---
                   } else if (event.address == REVERSEREGISTRARADDRESS && eventType == "ReverseClaimed") {
                     // event ReverseRegistrar.ReverseClaimed(address indexed addr, bytes32 indexed node);
-                    const [addr, node] = logData.args;
+                    let [addr, node] = logData.args;
                     record = { addr, node };
+                    [addr, node] = [null, null];
                   } else if (event.address == REVERSEREGISTRARADDRESS && eventType == "DefaultResolverChanged") {
                     // event ReverseRegistrar.DefaultResolverChanged(NameResolver indexed resolver);
-                    const [resolver] = logData.args;
+                    let [resolver] = logData.args;
                     record = { resolver };
+                    [resolver] = [null];
                   } else if (event.address == REVERSEREGISTRARADDRESS && eventType == "ControllerChanged") {
                     // event ControllerChanged(address indexed controller, bool enabled);
-                    const [controller, enabled] = logData.args;
+                    let [controller, enabled] = logData.args;
                     record = { controller, enabled };
+                    [controller, enabled] = [null, null];
                   }
 
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
                   if (record) {
-                    records.push({ blockNumber: parseInt(blockNumber), confirmations, logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash, contract: event.address, eventType, ...record });
+                    records.push({ blockNumber: parseInt(blockNumber), confirmations, logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash: event.transactionHash, contract: event.address, eventType, ...record });
                     record = null;
                   }
                   logData = null;
+                  eventType = null;
                 }
               }
               // console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - records: " + JSON.stringify(records));
@@ -2249,8 +2290,7 @@
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock);
                 let tryHalf = false;
                 try {
-                  const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
-                  let logs = await provider.getLogs(filter);
+                  let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
                   await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
                   logs = null;
                   t.sync.section = process.name;
