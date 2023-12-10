@@ -2029,10 +2029,10 @@
               // const contract = new ethers.Contract(process.address, process.abi, provider);
               total = parseInt(total) + logs.length;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
-              const records = [];
+              let records = [];
               for (const event of logs) {
                 if (!event.removed) {
-                  const logData = contract.interface.parseLog(event);
+                  let logData = contract.interface.parseLog(event);
                   const blockNumber = event.blockNumber;
                   const confirmations = latestBlockNumber - blockNumber;
                   const txIndex = event.transactionIndex;
@@ -2229,19 +2229,25 @@
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
                   if (record) {
                     records.push({ blockNumber: parseInt(blockNumber), confirmations, logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash, contract: event.address, eventType, ...record });
+                    record = null;
                   }
+                  logData = null;
                 }
               }
               // console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - records: " + JSON.stringify(records));
-              await db.events.bulkPut(records).then (function() {
-              }).catch(function(error) {
-                console.log("error: " + error);
-              });
+              if (records.length) {
+                await db.events.bulkPut(records).then (function() {
+                }).catch(function(error) {
+                  console.log("error: " + error);
+                });
+                records = null;
+              }
             }
 
             async function getLogs(t, db, process, contract, fromBlock, toBlock) {
               if (!t.sync.halt /*&& total < 200000*/) {
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock);
+                let tryHalf = false;
                 try {
                   const filter = { address: process.address, fromBlock, toBlock, topics: [null, null, null] };
                   let logs = await provider.getLogs(filter);
@@ -2250,6 +2256,9 @@
                   t.sync.section = process.name;
                   t.sync.completed = toBlock;
                 } catch (e) {
+                  tryHalf = true;
+                }
+                if (tryHalf) {
                   const mid = parseInt((fromBlock + toBlock) / 2);
                   await getLogs(t, db, process, contract, fromBlock, mid);
                   await getLogs(t, db, process, contract, parseInt(mid) + 1, toBlock);
