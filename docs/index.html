@@ -2030,7 +2030,8 @@
               total = parseInt(total) + logs.length;
               console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
               let records = [];
-              for (const event of logs) {
+              for (let i = 0; i < logs.length; i++) {
+                let event = logs[i];
                 if (!event.removed) {
                   let logData = contract.interface.parseLog(event);
                   // const blockNumber = parseInt(event.blockNumber);
@@ -2039,7 +2040,7 @@
                   // const logIndex = parseInt(event.logIndex);
                   // const txHash = event.transactionHash;
                   let eventType = logData.eventFragment.name;
-                  const eventTypeIndex = t.eventTypesToIndex[eventType];
+                  // const eventTypeIndex = t.eventTypesToIndex[eventType];
                   let record = null;
 
                   // --- ENSRegistryWithFallback ---
@@ -2274,6 +2275,7 @@
                   logData = null;
                   eventType = null;
                 }
+                event = null;
               }
               // console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - records: " + JSON.stringify(records));
               if (records.length) {
@@ -2292,6 +2294,8 @@
                 try {
                   let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
                   await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
+                  total = parseInt(total) + logs.length;
+                  console.log(moment().format("HH:mm:ss") + " syncEventsNew.SKIP processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
                   logs = null;
                   t.sync.section = process.name;
                   t.sync.completed = toBlock;
@@ -2823,7 +2827,7 @@
               console.log(moment().format("HH:mm:ss") + " processDataNew - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               // console.log(moment().format("HH:mm:ss") + " processDataNew - data[0]: " + JSON.stringify(data[0]));
               // console.log(moment().format("HH:mm:ss") + " processDataNew - data[" + (data.length - 1) + "]: " + JSON.stringify(data[(data.length - 1)]));
-              let existingTxs = await db.txs.where("[blockNumber+txIndex]").between([data[0].blockNumber, Dexie.minKey], [data[(data.length - 1)].blockNumber, Dexie.maxKey]).toArray();
+              let existingTxs = data.length > 0 && await db.txs.where("[blockNumber+txIndex]").between([data[0].blockNumber, Dexie.minKey], [data[(data.length - 1)].blockNumber, Dexie.maxKey]).toArray() || [];
               // console.log(moment().format("HH:mm:ss") + " processDataNew - existingTxs: " + JSON.stringify(existingTxs));
               for (const existingTx of existingTxs) {
                 excludeTxHashes[existingTx.txHash] = true;
@@ -2855,10 +2859,12 @@
               done = data.length < BATCHSIZE || (DEVMAX != 0 && rows > DEVMAX);
             } while (!done);
             // console.log("  FINAL Write " + lastTxHash + " " + events.map(e => e.logIndex));
-            if (!(events[0].txHash in excludeTxHashes)) {
-              txs.push(makeTx(events));
-            // } else {
-            //   console.log(moment().format("HH:mm:ss") + " FINAL Excluding: " + events[0].txHash);
+            if (events.length > 0) {
+              if (!(events[0].txHash in excludeTxHashes)) {
+                txs.push(makeTx(events));
+              // } else {
+              //   console.log(moment().format("HH:mm:ss") + " FINAL Excluding: " + events[0].txHash);
+              }
             }
             if (txs.length > 0) {
               console.log(moment().format("HH:mm:ss") + " FINAL Batch Write " + txs.length + " " + [0].blockNumber);
