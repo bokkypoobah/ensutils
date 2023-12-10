@@ -2033,10 +2033,10 @@
               for (const event of logs) {
                 if (!event.removed) {
                   let logData = contract.interface.parseLog(event);
-                  const blockNumber = parseInt(event.blockNumber);
-                  const confirmations = parseInt(latestBlockNumber) - parseInt(blockNumber);
-                  const txIndex = parseInt(event.transactionIndex);
-                  const logIndex = parseInt(event.logIndex);
+                  // const blockNumber = parseInt(event.blockNumber);
+                  // const confirmations = parseInt(latestBlockNumber) - parseInt(blockNumber);
+                  // const txIndex = parseInt(event.transactionIndex);
+                  // const logIndex = parseInt(event.logIndex);
                   // const txHash = event.transactionHash;
                   let eventType = logData.eventFragment.name;
                   const eventTypeIndex = t.eventTypesToIndex[eventType];
@@ -2268,7 +2268,7 @@
 
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
                   if (record) {
-                    records.push({ blockNumber: parseInt(blockNumber), confirmations, logIndex: parseInt(logIndex), txIndex: parseInt(txIndex), txHash: event.transactionHash, contract: event.address, eventType, ...record });
+                    records.push({ blockNumber: parseInt(event.blockNumber), confirmations: parseInt(latestBlockNumber) - parseInt(event.blockNumber), logIndex: parseInt(event.logIndex), txIndex: parseInt(event.transactionIndex), txHash: event.transactionHash, contract: event.address, eventType, ...record });
                     record = null;
                   }
                   logData = null;
