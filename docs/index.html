@@ -2033,10 +2033,10 @@
               for (const event of logs) {
                 if (!event.removed) {
                   let logData = contract.interface.parseLog(event);
-                  const blockNumber = event.blockNumber;
-                  const confirmations = latestBlockNumber - blockNumber;
-                  const txIndex = event.transactionIndex;
-                  const logIndex = event.logIndex;
+                  const blockNumber = parseInt(event.blockNumber);
+                  const confirmations = parseInt(latestBlockNumber) - parseInt(blockNumber);
+                  const txIndex = parseInt(event.transactionIndex);
+                  const logIndex = parseInt(event.logIndex);
                   // const txHash = event.transactionHash;
                   let eventType = logData.eventFragment.name;
                   const eventTypeIndex = t.eventTypesToIndex[eventType];
