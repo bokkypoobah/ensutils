@@ -2037,7 +2037,7 @@
               // const contract = new ethers.Contract(process.address, process.abi, provider);
               total = parseInt(total) + logs.length;
               subTotal = parseInt(subTotal) + logs.length;
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + subTotal + " " + total);
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + "-" + toBlock + "=" + (toBlock - fromBlock) + " " + logs.length + " " + subTotal + " " + total);
               let records = [];
               for (let i = 0; i < logs.length; i++) {
                 let event = logs[i];
@@ -2297,16 +2297,20 @@
             }
 
             async function getLogs(t, db, process, contract, fromBlock, toBlock) {
-              if (!t.sync.halt && total < 2000000) {
+              if (!t.sync.halt && fromBlock < toBlock && total < 2000000) {
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock);
                 let tryHalf = false;
                 try {
-                  // let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
-                  // await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
+                  let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
+                  await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
+                  for (let i = 0; i < logs.length; i++) {
+                    logs[i] = null;
+                  }
+                  logs = null;
 
-                  await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] }).then(
-                    (logs) => {processLogs(t, db, process, contract, fromBlock, toBlock, logs)}
-                  );
+                  // await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] }).then(
+                  //   (logs) => {processLogs(t, db, process, contract, fromBlock, toBlock, logs)}
+                  // );
 
                   // total = parseInt(total) + logs.length;
                   // console.log(moment().format("HH:mm:ss") + " syncEventsNew.SKIP processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
