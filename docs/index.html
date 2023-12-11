@@ -3264,6 +3264,21 @@
           async loadCurrentData() {
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
+
+            if (this.settings.tabIndex == 1) {
+              // const events = [];
+
+              const latest = await db.events.limit(100).toArray();
+              for (const o of latest) {
+                console.log("o: " + JSON.stringify(o));
+              }
+              const events = latest;
+
+              // events.push({ test: 123, one: 234 });
+              // events.push({ test: 234, one: 345 });
+              Vue.set(this, 'events', events);
+            }
+
             for (const name of ['indexToAddress', 'indexToAddressName', 'indexToNameLabel', 'indexToString', 'indexToHash', 'indexToTxHash', 'blockTimestamps', 'exchangeRates', 'txs']) {
               // console.log(moment().format("HH:mm:ss") + " loadCurrentData: " + name);
               const dataItems = await db.cache.where("objectName").equals(this.chainId + "_" + name).toArray();
