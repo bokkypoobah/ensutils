@@ -2030,7 +2030,7 @@
           },
 
           async syncEventsNew(db, provider, latestBlockNumber) {
-            const CONFIRMATIONS = 1000;
+            const CONFIRMATIONS = 100;
             let total = 0;
             let subTotal = 0;
             async function processLogs(t, db, process, contract, fromBlock, toBlock, logs) {
