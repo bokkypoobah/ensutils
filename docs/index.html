@@ -2193,7 +2193,7 @@
                     // event BaseRegistrarImplementation.NameRenewed(uint256 indexed id, uint expires);
                     let [id, expires] = logData.args;
                     let idInHex = ethers.BigNumber.from(id.toString()).toHexString();
-                    record = { id: indexiseHash(idInHex), expires: parseInt(expires) };
+                    record = { id: idInHex, expires: parseInt(expires) };
                     [id, expires, idInHex] = [null, null, null];
                   } else if (event.address == BASEREGISTRARIMPLEMENTATIONADDRESS && eventType == "Approval") {
                     // event BaseRegistrarImplementation.Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
@@ -2299,14 +2299,15 @@
             async function getLogs(t, db, process, contract, fromBlock, toBlock) {
               if (!t.sync.halt && fromBlock < toBlock && total < 2000000) {
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock);
-                let tryHalf = false;
                 try {
                   let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
-                  await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
-                  for (let i = 0; i < logs.length; i++) {
-                    logs[i] = null;
+                  if (logs && logs.length > 0) {
+                    await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
+                    for (let i = 0; i < logs.length; i++) {
+                      logs[i] = null;
+                    }
+                    logs = null;
                   }
-                  logs = null;
 
                   // await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] }).then(
                   //   (logs) => {processLogs(t, db, process, contract, fromBlock, toBlock, logs)}
@@ -2319,10 +2320,8 @@
                   t.sync.section = process.name;
                   t.sync.completed = toBlock;
                 } catch (e) {
-                  tryHalf = true;
-                }
-                if (tryHalf) {
-                  const mid = parseInt((fromBlock + toBlock) / 2);
+                  // console.log("e: " + e.toString());
+                  const mid = parseInt((parseInt(fromBlock) + toBlock) / 2);
                   await getLogs(t, db, process, contract, fromBlock, mid);
                   await getLogs(t, db, process, contract, parseInt(mid) + 1, toBlock);
                 }
