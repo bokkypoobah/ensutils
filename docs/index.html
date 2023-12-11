@@ -55,9 +55,9 @@
             <em v-b-popover.hover.bottom="'gm gm gm'">ensUtils</em>
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
-            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings()" :active="settings.tabIndex == 1000" active-class="active" v-b-popover.hover="'View Punks'">Punks</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings()" :active="settings.tabIndex == 1001" active-class="active" v-b-popover.hover="'View Activity'">Activity</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings()" :active="settings.tabIndex == 1002" active-class="active" v-b-popover.hover="'View Owners'">Owners</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings()" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Main'">Main</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings()" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Events'">Events</b-nav-item>
+            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings()" :active="settings.tabIndex == 1002" active-class="active" v-b-popover.hover="'View Owners'">Owners</b-nav-item>
             <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings()" :active="settings.tabIndex == 1003" active-class="active" v-b-popover.hover="'Configure Settings'">Config</b-nav-item> -->
             <b-avatar v-if="coinbase && coinbase != ensOrAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + ensOrAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar>
             <b-button size="sm" variant="outline-primary" class="ml-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? ensOrAddress(coinbase, 16) : 'Connect' }}</b-button>
@@ -510,7 +510,7 @@
                   </b-table>
 
                   <!-- :ACTIVITY -->
-                  <b-table v-if="!settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="settings.tabIndex == 0 && !settings.showInfo" small fixed striped responsive hover :fields="activityFields" :items="pagedFilteredSortedActivity" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
                     <template #cell(number)="data">
                       {{ parseInt(data.index) + ((settings.activityTable.currentPage - 1) * settings.activityTable.pageSize) + 1 }}
                     </template>
@@ -1141,6 +1141,15 @@
                     </template>
                   </b-table>
 
+                  <!-- :EVENTS -->
+                  <!-- <b-table v-if="settings.tabIndex == 1 && !settings.showInfo" small fixed striped responsive hover :fields="eventsFields" :items="events" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1"> -->
+                  <b-table v-if="settings.tabIndex == 1 && !settings.showInfo" small fixed striped responsive hover :items="events" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
+                    <template #cell(number)="data">
+                      {{ parseInt(data.index) + ((settings.activityTable.currentPage - 1) * settings.activityTable.pageSize) + 1 }}
+                    </template>
+                  </b-table>
+
+
                   <!-- :OWNERS -->
                   <b-table v-if="settings.tabIndex == 1002 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
                     <template #cell(number)="data">
@@ -1276,6 +1285,12 @@
               pageSize: 100,
               sortOption: 'punkidasc',
             },
+            eventsTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 100,
+              sortOption: 'txorderdsc',
+            },
             activityTable: {
               filter: null,
               currentPage: 1,
@@ -1290,7 +1305,7 @@
             },
             editAccounts: false,
             accounts: {},
-            version: 0,
+            version: 1,
           },
 
           sync: {
@@ -1320,7 +1335,10 @@
           tokens: {},
           offers: { "1": {}, "2": {} },
           v2Bids: {},
-          events: {},
+          events: [
+            { blockNumber: 123, logIndex: 456, txHash: "0xblah1" },
+            { blockNumber: 234, logIndex: 567, txHash: "0xblah2" },
+          ],
           modalPunk: {
             punkId: null,
             v1: {
