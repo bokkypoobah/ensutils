@@ -2420,22 +2420,27 @@
             for (const process of this.contracts) {
               let syncState = await db.syncStates.where('contract').equals(process.address).first();
               if (syncState) {
+                syncState.syncing = true;
+                Vue.set(this.syncStates, syncState.contract, syncState);
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Existing syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const count = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).count();
                 syncState.count -= count;
                 syncState.latestBlockNumber = latestBlockNumber;
-                syncState.syncing = true;
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Updated syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const deleteCall = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).delete();
+                await db.syncStates.put(syncState).then (function() {
+                }).catch(function(error) {
+                  console.log("syncStates.put error: " + error);
+                });
               } else {
                 syncState = { contract: process.address, deploymentBlockNumber: process.deploymentBlockNumber, firstEventBlockNumber: null, latestEventBlockNumber: null, latestBlockNumber: latestBlockNumber, count: 0, syncing: true };
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew - New syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
+                await db.syncStates.put(syncState).then (function() {
+                }).catch(function(error) {
+                  console.log("syncStates.put error: " + error);
+                });
+                Vue.set(this.syncStates, syncState.contract, syncState);
               }
-              await db.syncStates.put(syncState).then (function() {
-              }).catch(function(error) {
-                console.log("syncStates.put error: " + error);
-              });
-              Vue.set(this.syncStates, syncState.contract, syncState);
 
               const contract = new ethers.Contract(process.address, process.abi, provider);
               const last = await db.events.where('contract').equals(process.address).last();
