@@ -1509,13 +1509,13 @@
             // Feb-03-2020 12:55:01 AM +UTC 0x6109DD117AA5486605FC85e040ab00163a75c662
 
             // Mar-28-2023 11:42:35 AM +UTC 0xa58E81fe9b61B5c3fE2AFD33CF304c454AbFc7Cb
-            // { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
+            { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
             // Mar-28-2023 11:42:59 AM +UTC 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401
             { name: "NameWrapper", address: NAMEWRAPPERADDRESS, abi: NAMEWRAPPERABI, deploymentBlockNumber: NAMEWRAPPERDEPLOYMENTBLOCKNUMBER },
             // Mar-28-2023 11:44:59 AM +UTC 0x253553366Da8546fC250F225fe3d25d0C782303b
-            // { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+            { name: "ETHRegistrarController", address: ETHREGISTRARCONTROLLERADDRESS, abi: ETHREGISTRARCONTROLLERABI, deploymentBlockNumber: ETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
             // Mar-28-2023 11:45:11 AM +UTC 0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63
-            // { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
+            { name: "PublicResolver", address: PUBLICRESOLVERADDRESS, abi: PUBLICRESOLVERABI, deploymentBlockNumber: PUBLICRESOLVERDEPLOYMENTBLOCKNUMBER },
           ],
           backgroundStyles: [
             "",
@@ -2315,7 +2315,7 @@
 
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
                   if (record) {
-                    records.push({ blockNumber: parseInt(event.blockNumber), confirmations: parseInt(latestBlockNumber) - parseInt(event.blockNumber), logIndex: parseInt(event.logIndex), txIndex: parseInt(event.transactionIndex), txHash: event.transactionHash, contract: event.address, eventType, ...record });
+                    records.push({ blockNumber: parseInt(event.blockNumber), logIndex: parseInt(event.logIndex), txIndex: parseInt(event.transactionIndex), txHash: event.transactionHash, contract: event.address, eventType, ...record });
                     record = null;
                   }
                   logData = null;
@@ -2379,7 +2379,6 @@
 
             for (const process of this.contracts) {
               let syncState = await db.syncStates.where('contract').equals(process.address).first();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
               if (syncState) {
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew - Existing syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const count = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).count();
