@@ -1544,7 +1544,7 @@
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
-              events: '[blockNumber+logIndex],contract,confirmations',
+              events: '[blockNumber+logIndex],[blockNumber+contract],contract,confirmations',
               syncStates: '&contract',
               txs: '[blockNumber+txIndex],txHash',
             },
@@ -2063,11 +2063,18 @@
             const CONFIRMATIONS = 100;
             let total = 0;
             let subTotal = 0;
-            async function processLogs(t, db, process, contract, fromBlock, toBlock, logs) {
+            async function processLogs(t, db, process, contract, syncState, fromBlock, toBlock, logs) {
               // const contract = new ethers.Contract(process.address, process.abi, provider);
               total = parseInt(total) + logs.length;
               subTotal = parseInt(subTotal) + logs.length;
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + "-" + toBlock + "=" + (toBlock - fromBlock) + " " + logs.length + " " + subTotal + " " + total);
+              syncState.count += logs.length;
+              if (!syncState.firstEventBlockNumber && logs.length > 0) {
+                syncState.firstEventBlockNumber = logs[0].blockNumber;
+              }
+              if (logs.length > 0) {
+                syncState.latestEventBlockNumber = logs[logs.length - 1].blockNumber;
+              }
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + "-" + toBlock + "=" + (toBlock - fromBlock) + " " + logs.length + " " + subTotal + " " + total + " " + JSON.stringify(syncState));
               let records = [];
               for (let i = 0; i < logs.length; i++) {
                 let event = logs[i];
@@ -2320,19 +2327,24 @@
               if (records.length) {
                 await db.events.bulkPut(records).then (function() {
                 }).catch(function(error) {
-                  console.log("error: " + error);
+                  console.log("events.bulkPut error: " + error);
                 });
                 records = null;
               }
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - syncStates.put " + JSON.stringify(syncState));
+              await db.syncStates.put(syncState).then (function() {
+              }).catch(function(error) {
+                console.log("syncStates.put error: " + error);
+              });
             }
 
-            async function getLogs(t, db, process, contract, fromBlock, toBlock) {
+            async function getLogs(t, db, process, contract, syncState, fromBlock, toBlock) {
               if (!t.sync.halt && fromBlock < toBlock && total < 2000000) {
-                // console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock);
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + JSON.stringify(syncState));
                 try {
                   let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
                   if (logs && logs.length > 0) {
-                    await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
+                    await processLogs(t, db, process, contract, syncState, fromBlock, toBlock, logs);
                     // for (let i = 0; i < logs.length; i++) {
                     //   logs[i] = null;
                     // }
@@ -2352,35 +2364,50 @@
                 } catch (e) {
                   // console.log("e: " + e.toString());
                   const mid = parseInt((parseInt(fromBlock) + toBlock) / 2);
-                  await getLogs(t, db, process, contract, fromBlock, mid);
-                  await getLogs(t, db, process, contract, parseInt(mid) + 1, toBlock);
+                  await getLogs(t, db, process, contract, syncState, fromBlock, mid);
+                  await getLogs(t, db, process, contract, syncState, parseInt(mid) + 1, toBlock);
                 }
               }
             }
 
             const latest = await db.events.limit(1).last();
             // console.log(moment().format("HH:mm:ss") + " syncEventsNew - latest: " + JSON.stringify(latest));
-            const toDelete = await db.events.where('confirmations').below(CONFIRMATIONS).toArray();
-            const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
-            console.log(moment().format("HH:mm:ss") + " syncEventsNew - Deleted: " + JSON.stringify(toDelete.map(e => e.blockNumber + '.' + e.logIndex)));
+            // const toDelete = await db.events.where('confirmations').below(CONFIRMATIONS).toArray();
+            // const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
+            // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Deleted: " + JSON.stringify(toDelete.map(e => e.blockNumber + '.' + e.logIndex)));
             // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Deleted: " + JSON.stringify(toDelete, null, 2));
 
             for (const process of this.contracts) {
+              let syncState = await db.syncStates.where('contract').equals(process.address).first();
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew - syncState: " + JSON.stringify(syncState));
+              if (syncState) {
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew - Existing syncState: " + JSON.stringify(syncState));
+                // const toDelete = await db.events.where('contract', 'blockNumber').between([process.address, latestBlockNumber - CONFIRMATIONS], [process.address, Dexie.maxKey], true, true).toArray();
+                // const toDelete = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).toArray();
+                // console.log("toDelete: " + JSON.stringify(toDelete, null, 2));
+                const count = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).count();
+                syncState.count -= count;
+                // const toDelete = await db.events.where('contract', 'blockNumber').between([process.address, Dexie.minKey], [process.address, Dexie.maxKey], true, true).toArray();
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew - Updated syncState: " + JSON.stringify(syncState));
+                // const toDelete = await db.events.where('contract').between(process.address, process.address, true, true).toArray();
+                const deleteCall = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).delete();
+                await db.syncStates.put(syncState).then (function() {
+                }).catch(function(error) {
+                  console.log("syncStates.put error: " + error);
+                });
+              } else {
+                syncState = { contract: process.address, deploymentBlockNumber: process.deploymentBlockNumber, firstEventBlockNumber: null, latestEventBlockNumber: null, latestBlockNumber: latestBlockNumber, count: 0 };
+                console.log(moment().format("HH:mm:ss") + " syncEventsNew - New syncState: " + JSON.stringify(syncState));
+              }
+
               const contract = new ethers.Contract(process.address, process.abi, provider);
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - before count()");
-              let count = await db.events.where('contract').equals(process.address).count();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - before last()");
               const last = await db.events.where('contract').equals(process.address).last();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew - after last()");
               const startBlock = last ? (parseInt(last.blockNumber) + 1) : process.deploymentBlockNumber;
-              // console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + data.length);
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew BEFORE - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
               this.sync.total = latestBlockNumber;
               this.sync.completed = startBlock;
               subTotal = 0;
-              await getLogs(this, db, process, contract, startBlock, latestBlockNumber);
-              count = await db.events.where('contract').equals(process.address).count();
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil') + ", count: " + count);
+              await getLogs(this, db, process, contract, syncState, startBlock, latestBlockNumber);
+              console.log(moment().format("HH:mm:ss") + " syncEventsNew AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil'));
             }
           },
 
@@ -3281,9 +3308,9 @@
               this.eventsTotalRows = await db.events.count();
               // const events = [];
               const latest = await db.events.limit(this.settings.eventsTable.pageSize).toArray();
-              for (const o of latest) {
-                console.log("o: " + JSON.stringify(o));
-              }
+              // for (const o of latest) {
+              //   console.log("o: " + JSON.stringify(o));
+              // }
               const events = latest;
 
               // events.push({ test: 123, one: 234 });
