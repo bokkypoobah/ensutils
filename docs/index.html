@@ -1351,7 +1351,6 @@
           offers: { "1": {}, "2": {} },
           v2Bids: {},
           events: [],
-          eventsTotalRows: 0,
           modalPunk: {
             punkId: null,
             v1: {
@@ -1577,7 +1576,15 @@
               if ('count' in syncState) {
                 totalCount += syncState.count;
               }
-              results.push({ name: contract.name, address: contract.address, count: syncState.count || null });
+              results.push({
+                name: contract.name,
+                address: contract.address,
+                count: syncState.count || null,
+                firstEventBlockNumber: syncState.firstEventBlockNumber || null,
+                latestEventBlockNumber: syncState.latestEventBlockNumber || null,
+                latestBlockNumber: syncState.latestBlockNumber || null,
+                syncing: syncState.syncing || null,
+              });
             }
             results.push({ name: "Total", address: null, count: totalCount });
             return results;
@@ -2091,7 +2098,8 @@
           },
 
           async syncEventsNew(db, provider, latestBlockNumber) {
-            const CONFIRMATIONS = 100;
+            // TODO: DEV
+            const CONFIRMATIONS = 1000;
             let total = 0;
             let subTotal = 0;
             async function processLogs(t, db, process, contract, syncState, fromBlock, toBlock, logs) {
@@ -2415,16 +2423,19 @@
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Existing syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const count = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).count();
                 syncState.count -= count;
+                syncState.latestBlockNumber = latestBlockNumber;
+                syncState.syncing = true;
                 // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Updated syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const deleteCall = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).delete();
-                await db.syncStates.put(syncState).then (function() {
-                }).catch(function(error) {
-                  console.log("syncStates.put error: " + error);
-                });
               } else {
-                syncState = { contract: process.address, deploymentBlockNumber: process.deploymentBlockNumber, firstEventBlockNumber: null, latestEventBlockNumber: null, latestBlockNumber: latestBlockNumber, count: 0 };
+                syncState = { contract: process.address, deploymentBlockNumber: process.deploymentBlockNumber, firstEventBlockNumber: null, latestEventBlockNumber: null, latestBlockNumber: latestBlockNumber, count: 0, syncing: true };
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew - New syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
               }
+              await db.syncStates.put(syncState).then (function() {
+              }).catch(function(error) {
+                console.log("syncStates.put error: " + error);
+              });
+              Vue.set(this.syncStates, syncState.contract, syncState);
 
               const contract = new ethers.Contract(process.address, process.abi, provider);
               const last = await db.events.where('contract').equals(process.address).last();
@@ -2434,6 +2445,13 @@
               subTotal = 0;
               await getLogs(this, db, process, contract, syncState, startBlock, latestBlockNumber);
               // console.log(moment().format("HH:mm:ss") + " syncEventsNew AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil'));
+
+              syncState.syncing = false;
+              await db.syncStates.put(syncState).then (function() {
+              }).catch(function(error) {
+                console.log("syncStates.put error: " + error);
+              });
+              Vue.set(this.syncStates, syncState.contract, syncState);
             }
             console.log(moment().format("HH:mm:ss") + " syncEventsNew END");
           },
@@ -3340,8 +3358,6 @@
             Vue.set(this, 'syncStates', syncStates);
 
             if (this.settings.tabIndex == 1) {
-              this.eventsTotalRows = 123; // await db.events.count();
-              // const events = [];
               const latest = await db.events.limit(this.settings.eventsTable.pageSize).toArray();
               // for (const o of latest) {
               //   console.log("o: " + JSON.stringify(o));
