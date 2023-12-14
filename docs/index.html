@@ -1320,6 +1320,8 @@
             completed: null,
             halt: false,
           },
+
+          syncStates: {},
           blockTimestamps: {},
           exchangeRates: {},
           addressToIndex: {},
@@ -1501,6 +1503,11 @@
             { name: "BaseRegistrarImplementation", address: BASEREGISTRARIMPLEMENTATIONADDRESS, abi: BASEREGISTRARIMPLEMENTATIONABI, deploymentBlockNumber: BASEREGISTRARIMPLEMENTATIONDEPLOYMENTBLOCKNUMBER },
             // Jan-30-2020 12:56:38 AM +UTC 0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5
             { name: "OldETHRegistrarController", address: OLDETHREGISTRARCONTROLLERADDRESS, abi: OLDETHREGISTRARCONTROLLERABI, deploymentBlockNumber: OLDETHREGISTRARCONTROLLERDEPLOYMENTBLOCKNUMBER },
+
+            // TODO: Confirm there are no events
+            // { name: "RegistrarMigration", address: REGISTRARMIGRATIONADDRESS, abi: REGISTRARMIGRATIONABI, deploymentBlockNumber: REGISTRARMIGRATIONDEPLOYMENTBLOCKNUMBER },
+            // Feb-03-2020 12:55:01 AM +UTC 0x6109DD117AA5486605FC85e040ab00163a75c662
+
             // Mar-28-2023 11:42:35 AM +UTC 0xa58E81fe9b61B5c3fE2AFD33CF304c454AbFc7Cb
             { name: "ReverseRegistrar", address: REVERSEREGISTRARADDRESS, abi: REVERSEREGISTRARABI, deploymentBlockNumber: REVERSEREGISTRARDEPLOYMENTBLOCKNUMBER },
             // Mar-28-2023 11:42:59 AM +UTC 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401
@@ -1533,11 +1540,12 @@
             { value: 1, text: 'UTC Time' },
           ],
           db: {
-            name: "ensutilsdata088e",
+            name: "ensutilsdata088f",
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
               events: '[blockNumber+logIndex],contract,confirmations',
+              syncStates: '&contract',
               txs: '[blockNumber+txIndex],txHash',
             },
             updated: null,
@@ -2325,9 +2333,9 @@
                   let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
                   if (logs && logs.length > 0) {
                     await processLogs(t, db, process, contract, fromBlock, toBlock, logs);
-                    for (let i = 0; i < logs.length; i++) {
-                      logs[i] = null;
-                    }
+                    // for (let i = 0; i < logs.length; i++) {
+                    //   logs[i] = null;
+                    // }
                     logs = null;
                   }
 
