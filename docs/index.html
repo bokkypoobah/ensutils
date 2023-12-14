@@ -1544,7 +1544,7 @@
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
-              events: '[blockNumber+logIndex],[blockNumber+contract],contract,confirmations',
+              events: '[blockNumber+logIndex],[blockNumber+contract],contract',
               syncStates: '&contract',
               txs: '[blockNumber+txIndex],txHash',
             },
@@ -2382,14 +2382,9 @@
               console.log(moment().format("HH:mm:ss") + " syncEventsNew - syncState: " + JSON.stringify(syncState));
               if (syncState) {
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew - Existing syncState: " + JSON.stringify(syncState));
-                // const toDelete = await db.events.where('contract', 'blockNumber').between([process.address, latestBlockNumber - CONFIRMATIONS], [process.address, Dexie.maxKey], true, true).toArray();
-                // const toDelete = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).toArray();
-                // console.log("toDelete: " + JSON.stringify(toDelete, null, 2));
                 const count = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).count();
                 syncState.count -= count;
-                // const toDelete = await db.events.where('contract', 'blockNumber').between([process.address, Dexie.minKey], [process.address, Dexie.maxKey], true, true).toArray();
                 console.log(moment().format("HH:mm:ss") + " syncEventsNew - Updated syncState: " + JSON.stringify(syncState));
-                // const toDelete = await db.events.where('contract').between(process.address, process.address, true, true).toArray();
                 const deleteCall = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).delete();
                 await db.syncStates.put(syncState).then (function() {
                 }).catch(function(error) {
