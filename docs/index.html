@@ -1150,10 +1150,13 @@
                           {{ data.item.name }}
                         </b-link>
                         <font size="-2">
+                          <b-badge pill variant="transparent">{{ data.item.address }}</b-badge>
+                        </font>
+                        <!-- <font size="-2">
                           <b-link :href="'https://etherscan.io/address/' +  data.item.address" v-b-popover.hover.bottom="'View transactions in etherscan.io'" target="_blank">
                             {{ data.item.address.substring(0, 20) + '...' }}
                           </b-link>
-                        </font>
+                        </font> -->
                       </span>
                       <span v-else>
                         {{ data.item.name }}
