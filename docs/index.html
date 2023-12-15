@@ -55,9 +55,9 @@
             <em v-b-popover.hover.bottom="'gm gm gm'">ensUtils</em>
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
-            <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings()" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Main'">Main</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings()" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Events'">Events</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings()" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'Status'">Status</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings(); loadCurrentData();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Main'">Main</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings(); loadCurrentData();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Events'">Events</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings(); loadCurrentData();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'Status'">Status</b-nav-item>
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings()" :active="settings.tabIndex == 1002" active-class="active" v-b-popover.hover="'View Owners'">Owners</b-nav-item>
             <b-nav-item size="sm" @click="settings.tabIndex = 3; saveSettings()" :active="settings.tabIndex == 1003" active-class="active" v-b-popover.hover="'Configure Settings'">Config</b-nav-item> -->
             <b-avatar v-if="coinbase && coinbase != ensOrAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + ensOrAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar>
