@@ -1174,28 +1174,24 @@
                     </template>
                     <template #cell(latestEventBlockNumber)="data">
                       <font v-if="blockNumber && data.item.latestEventBlockNumber && data.item.latestEventBlockNumber <= blockNumber" size="-2">
-                        <b-badge pill variant="transparent">{{ blockNumber - data.item.latestEventBlockNumber }}</b-badge>
+                        <b-badge pill variant="transparent" class="text-muted">{{ blockNumber - data.item.latestEventBlockNumber }}</b-badge>
                       </font>
                       {{ commify0(data.item.latestEventBlockNumber) }}
                     </template>
                     <template #cell(latestBlockNumber)="data">
                       <font v-if="blockNumber && data.item.latestBlockNumber && data.item.latestBlockNumber <= blockNumber" size="-2">
-                        <b-badge pill variant="transparent">{{ blockNumber - data.item.latestBlockNumber }}</b-badge>
+                        <b-badge pill variant="transparent" class="text-muted">{{ blockNumber - data.item.latestBlockNumber }}</b-badge>
                       </font>
                       {{ commify0(data.item.latestBlockNumber) }}
                     </template>
                     <template #cell(count)="data">
+                      <!-- <font v-if="data.item.count && data.item.lastCount" size="-2"> -->
+                        <!-- <b-badge pill variant="transparent">{{ data.item.count - data.item.lastCount }}</b-badge> -->
+                        <!-- <b-badge pill variant="transparent">{{ commify0(data.item.lastCount) }}</b-badge> -->
+                      <!-- </font> -->
                       {{ commify0(data.item.count) }}
                     </template>
                   </b-table>
-
-                  <!-- { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
-                  { key: 'contract', label: 'Contract', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
-                  { key: 'firstEventBlockNumber', label: 'First Event #', /*sortable: true,*/ thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
-                  { key: 'latestEventBlockNumber', label: 'Latest Event #', /*sortable: true,*/ thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
-                  { key: 'latestBlockNumber', label: 'Latest #', /*sortable: true,*/ thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
-                  { key: 'count', label: '# Events', sortable: false, thStyle: 'width: 20%;', thClass: 'text-right', tdClass: 'text-right' }, -->
-
 
                   <!-- :OWNERS -->
                   <b-table v-if="settings.tabIndex == 1002 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
@@ -1611,7 +1607,6 @@
           },
           status() {
             const results = [];
-            // console.log("syncStates: " + JSON.stringify(this.syncStates));
             let totalCount = 0;
             for (const contract of this.contracts) {
               const syncState = this.syncStates[contract.address] || {};
@@ -1625,6 +1620,7 @@
                 latestEventBlockNumber: syncState.latestEventBlockNumber || null,
                 latestBlockNumber: syncState.latestBlockNumber || null,
                 count: syncState.count || null,
+                lastCount: syncState.lastCount || null,
                 syncing: syncState.syncing || null,
                 '_rowVariant': syncState.syncing ? 'success' : 'light',
               });
@@ -2147,6 +2143,7 @@
             async function processLogs(t, db, process, contract, syncState, fromBlock, toBlock, logs) {
               total = parseInt(total) + logs.length;
               subTotal = parseInt(subTotal) + logs.length;
+              // TODO: counts do not add up
               syncState.count += logs.length;
               if (!syncState.firstEventBlockNumber && logs.length > 0) {
                 syncState.firstEventBlockNumber = logs[0].blockNumber;
@@ -2451,20 +2448,18 @@
               }
             }
 
-            const latest = await db.events.limit(1).last();
+            // const latest = await db.events.limit(1).last();
             // console.log(moment().format("HH:mm:ss") + " syncEvents - latest: " + JSON.stringify(latest));
-            // const toDelete = await db.events.where('confirmations').below(CONFIRMATIONS).toArray();
-            // const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
-            // console.log(moment().format("HH:mm:ss") + " syncEvents - Deleted: " + JSON.stringify(toDelete.map(e => e.blockNumber + '.' + e.logIndex)));
-            // console.log(moment().format("HH:mm:ss") + " syncEvents - Deleted: " + JSON.stringify(toDelete, null, 2));
 
             for (const process of this.contracts) {
               let syncState = await db.syncStates.where('contract').equals(process.address).first();
               if (syncState) {
                 syncState.syncing = true;
+                syncState.lastCount = syncState.count;
                 Vue.set(this.syncStates, syncState.contract, syncState);
                 // console.log(moment().format("HH:mm:ss") + " syncEvents - Existing syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const count = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).count();
+                // TODO: counts do not add up
                 syncState.count -= count;
                 syncState.latestBlockNumber = latestBlockNumber;
                 // console.log(moment().format("HH:mm:ss") + " syncEvents - Updated syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
@@ -2474,7 +2469,7 @@
                   console.log("syncStates.put error: " + error);
                 });
               } else {
-                syncState = { contract: process.address, deploymentBlockNumber: process.deploymentBlockNumber, firstEventBlockNumber: null, latestEventBlockNumber: null, latestBlockNumber: latestBlockNumber, count: 0, syncing: true };
+                syncState = { contract: process.address, deploymentBlockNumber: process.deploymentBlockNumber, firstEventBlockNumber: null, latestEventBlockNumber: null, latestBlockNumber: latestBlockNumber, count: 0, lastCount: null, syncing: true };
                 console.log(moment().format("HH:mm:ss") + " syncEvents - New syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 await db.syncStates.put(syncState).then (function() {
                 }).catch(function(error) {
@@ -2499,7 +2494,8 @@
               });
               Vue.set(this.syncStates, syncState.contract, syncState);
             }
-            console.log(moment().format("HH:mm:ss") + " syncEvents END");
+            console.log(moment().format("HH:mm:ss") + " syncEvents - syncStates: " + JSON.stringify(this.syncStates, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " syncEvents END");
           },
 
           async syncEventsOld(db, provider, latestBlockNumber) {
