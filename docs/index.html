@@ -1157,11 +1157,48 @@
                   </b-table>
 
                   <!-- :STATUS -->
-                  <b-table v-if="settings.tabIndex == 2 && !settings.showInfo" small fixed striped responsive hover :items="status" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
+                  <b-table v-if="settings.tabIndex == 2 && !settings.showInfo" small fixed striped responsive hover :fields="statusFields" :items="status" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
                     <template #cell(number)="data">
-                      {{ parseInt(data.index) + ((settings.activityTable.currentPage - 1) * settings.activityTable.pageSize) + 1 }}
+                      <span v-if="data.item.address">
+                        {{ parseInt(data.index) + ((settings.activityTable.currentPage - 1) * settings.activityTable.pageSize) + 1 }}
+                      </span>
+                    </template>
+                    <template #cell(contract)="data">
+                      <span v-if="data.item.address">
+                        <b-link :href="'https://etherscan.io/address/' +  data.item.address + '#code'" v-b-popover.hover.bottom="'View code in etherscan.io'" target="_blank">
+                          {{ data.item.name }}
+                        </b-link>
+                        <font size="-2">
+                          <b-link :href="'https://etherscan.io/address/' +  data.item.address" v-b-popover.hover.bottom="'View transactions in etherscan.io'" target="_blank">
+                            {{ data.item.address.substring(0, 20) + '...' }}
+                          </b-link>
+                        </font>
+                      </span>
+                      <span v-else>
+                        {{ data.item.name }}
+                      </span>
+                    </template>
+                    <template #cell(firstEventBlockNumber)="data">
+                      {{ commify0(data.item.firstEventBlockNumber) }}
+                    </template>
+                    <template #cell(latestEventBlockNumber)="data">
+                      {{ commify0(data.item.latestEventBlockNumber) }}
+                    </template>
+                    <template #cell(latestBlockNumber)="data">
+                      {{ commify0(data.item.latestBlockNumber) }}
+                    </template>
+                    <template #cell(count)="data">
+                      {{ commify0(data.item.count) }}
                     </template>
                   </b-table>
+
+                  <!-- { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+                  { key: 'contract', label: 'Contract', sortable: false, thStyle: 'width: 10%;', thClass: 'text-left', tdClass: 'text-truncate' },
+                  { key: 'firstEventBlockNumber', label: 'First Event #', /*sortable: true,*/ thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
+                  { key: 'latestEventBlockNumber', label: 'Latest Event #', /*sortable: true,*/ thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
+                  { key: 'latestBlockNumber', label: 'Latest #', /*sortable: true,*/ thStyle: 'width: 30%;', thClass: 'text-right', tdClass: 'text-right' },
+                  { key: 'count', label: '# Events', sortable: false, thStyle: 'width: 20%;', thClass: 'text-right', tdClass: 'text-right' }, -->
+
 
                   <!-- :OWNERS -->
                   <b-table v-if="settings.tabIndex == 1002 && !settings.showInfo" small fixed striped responsive hover :fields="ownersFields" :items="pagedFilteredSortedOwners" show-empty empty-html="Click Sync above to retrieve contract events" head-variant="light" class="mx-0 my-1">
@@ -1432,6 +1469,14 @@
             // { key: 'value', label: 'Value', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
             { key: 'events', label: 'Events', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'text-left' },
           ],
+          statusFields: [
+            { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
+            { key: 'contract', label: 'Contract', sortable: false, thStyle: 'width: 35%;', thClass: 'text-left', tdClass: 'text-truncate' },
+            { key: 'firstEventBlockNumber', label: 'First Event #', /*sortable: true,*/ thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'latestEventBlockNumber', label: 'Latest Event #', /*sortable: true,*/ thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'latestBlockNumber', label: 'Latest #', /*sortable: true,*/ thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+            { key: 'count', label: '# Events', sortable: false, thStyle: 'width: 15%;', thClass: 'text-right', tdClass: 'text-right' },
+          ],
           ownersFields: [
             { key: 'number', label: '#', sortable: false, thStyle: 'width: 5%;', tdClass: 'text-truncate' },
             { key: 'owner', label: 'Owner', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
@@ -1546,7 +1591,7 @@
             { value: 1, text: 'UTC Time' },
           ],
           db: {
-            name: "ensutilsdata088f",
+            name: "ensutilsdata088ftemp",
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
@@ -1579,11 +1624,12 @@
               results.push({
                 name: contract.name,
                 address: contract.address,
-                count: syncState.count || null,
                 firstEventBlockNumber: syncState.firstEventBlockNumber || null,
                 latestEventBlockNumber: syncState.latestEventBlockNumber || null,
                 latestBlockNumber: syncState.latestBlockNumber || null,
+                count: syncState.count || null,
                 syncing: syncState.syncing || null,
+                '_rowVariant': syncState.syncing ? 'success' : 'light',
               });
             }
             results.push({ name: "Total", address: null, count: totalCount });
@@ -2072,32 +2118,32 @@
             console.log(moment().format("HH:mm:ss") + " syncIt - latestBlockNumber: " + latestBlockNumber + ", chainId: " + this.chainId);
             let newAddressIndexes = [];
             if (!devMode) {
+            //   newAddressIndexes = await this.syncEventsOld(db, provider, latestBlockNumber);
+            // } else {
               newAddressIndexes = await this.syncEvents(db, provider, latestBlockNumber);
-            } else {
-              newAddressIndexes = await this.syncEventsNew(db, provider, latestBlockNumber);
             }
             // if (!devMode) {
             //   await this.syncENSNames(newAddressIndexes, db, provider);
             // }
             if (!devMode) {
-              await this.syncBlockTimestamps(db);
+              // await this.syncBlockTimestamps(db);
             }
             // if (!devMode) {
             //   await this.syncExchangeRates(db);
             // }
             if (!devMode) {
-              await this.processData(db);
+              // await this.processData(db);
             } else {
               // await this.processDataNew(db);
             }
-            if (!devMode) {
+            // if (!devMode) {
               await this.loadCurrentData();
-            }
+            // }
             this.sync.section = null;
             this.sync.halt = false;
           },
 
-          async syncEventsNew(db, provider, latestBlockNumber) {
+          async syncEvents(db, provider, latestBlockNumber) {
             // TODO: DEV
             const CONFIRMATIONS = 1000;
             let total = 0;
@@ -2113,7 +2159,7 @@
               if (logs.length > 0) {
                 syncState.latestEventBlockNumber = logs[logs.length - 1].blockNumber;
               }
-              console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs " + process.name + ": " + fromBlock + "-" + toBlock + "=" + (toBlock - fromBlock) + " " + logs.length + " " + subTotal + " " + total + " "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
+              console.log(moment().format("HH:mm:ss") + " syncEvents.processLogs " + process.name + ": " + fromBlock + "-" + toBlock + "=" + (toBlock - fromBlock) + " " + logs.length + " " + subTotal + " " + total + " "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
               let records = [];
               for (let i = 0; i < logs.length; i++) {
                 let event = logs[i];
@@ -2362,7 +2408,7 @@
                 }
                 event = null;
               }
-              // console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - records: " + JSON.stringify(records));
+              // console.log(moment().format("HH:mm:ss") + " syncEvents.processLogs - records: " + JSON.stringify(records));
               if (records.length) {
                 await db.events.bulkPut(records).then (function() {
                 }).catch(function(error) {
@@ -2370,7 +2416,7 @@
                 });
                 records = null;
               }
-              // console.log(moment().format("HH:mm:ss") + " syncEventsNew.processLogs - syncStates.put " + syncState.count + " @ " + syncState.latestEventBlockNumber);
+              // console.log(moment().format("HH:mm:ss") + " syncEvents.processLogs - syncStates.put " + syncState.count + " @ " + syncState.latestEventBlockNumber);
               await db.syncStates.put(syncState).then (function() {
               }).catch(function(error) {
                 console.log("syncStates.put error: " + error);
@@ -2380,7 +2426,7 @@
 
             async function getLogs(t, db, process, contract, syncState, fromBlock, toBlock) {
               if (!t.sync.halt && fromBlock < toBlock && total < 2000000) {
-                // console.log(moment().format("HH:mm:ss") + " syncEventsNew.getLogs " + process.name + ": " + fromBlock + " - " + toBlock + " "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
+                // console.log(moment().format("HH:mm:ss") + " syncEvents.getLogs " + process.name + ": " + fromBlock + " - " + toBlock + " "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 try {
                   let logs = await provider.getLogs({ address: process.address, fromBlock, toBlock, topics: [null, null, null] });
                   if (logs && logs.length > 0) {
@@ -2396,7 +2442,7 @@
                   // );
 
                   // total = parseInt(total) + logs.length;
-                  // console.log(moment().format("HH:mm:ss") + " syncEventsNew.SKIP processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
+                  // console.log(moment().format("HH:mm:ss") + " syncEvents.SKIP processLogs " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
                   // logs = null;
                   // System.gc();
                   t.sync.section = process.name;
@@ -2411,22 +2457,22 @@
             }
 
             const latest = await db.events.limit(1).last();
-            // console.log(moment().format("HH:mm:ss") + " syncEventsNew - latest: " + JSON.stringify(latest));
+            // console.log(moment().format("HH:mm:ss") + " syncEvents - latest: " + JSON.stringify(latest));
             // const toDelete = await db.events.where('confirmations').below(CONFIRMATIONS).toArray();
             // const deleted = await db.events.where('confirmations').below(CONFIRMATIONS).delete();
-            // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Deleted: " + JSON.stringify(toDelete.map(e => e.blockNumber + '.' + e.logIndex)));
-            // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Deleted: " + JSON.stringify(toDelete, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " syncEvents - Deleted: " + JSON.stringify(toDelete.map(e => e.blockNumber + '.' + e.logIndex)));
+            // console.log(moment().format("HH:mm:ss") + " syncEvents - Deleted: " + JSON.stringify(toDelete, null, 2));
 
             for (const process of this.contracts) {
               let syncState = await db.syncStates.where('contract').equals(process.address).first();
               if (syncState) {
                 syncState.syncing = true;
                 Vue.set(this.syncStates, syncState.contract, syncState);
-                // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Existing syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
+                // console.log(moment().format("HH:mm:ss") + " syncEvents - Existing syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const count = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).count();
                 syncState.count -= count;
                 syncState.latestBlockNumber = latestBlockNumber;
-                // console.log(moment().format("HH:mm:ss") + " syncEventsNew - Updated syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
+                // console.log(moment().format("HH:mm:ss") + " syncEvents - Updated syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 const deleteCall = await db.events.where("[blockNumber+contract]").between([syncState.latestBlockNumber - CONFIRMATIONS, process.address], [Dexie.maxKey, process.address]).delete();
                 await db.syncStates.put(syncState).then (function() {
                 }).catch(function(error) {
@@ -2434,7 +2480,7 @@
                 });
               } else {
                 syncState = { contract: process.address, deploymentBlockNumber: process.deploymentBlockNumber, firstEventBlockNumber: null, latestEventBlockNumber: null, latestBlockNumber: latestBlockNumber, count: 0, syncing: true };
-                console.log(moment().format("HH:mm:ss") + " syncEventsNew - New syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
+                console.log(moment().format("HH:mm:ss") + " syncEvents - New syncState: "  + syncState.count + " @ " + syncState.latestEventBlockNumber);
                 await db.syncStates.put(syncState).then (function() {
                 }).catch(function(error) {
                   console.log("syncStates.put error: " + error);
@@ -2449,7 +2495,7 @@
               this.sync.completed = startBlock;
               subTotal = 0;
               await getLogs(this, db, process, contract, syncState, startBlock, latestBlockNumber);
-              // console.log(moment().format("HH:mm:ss") + " syncEventsNew AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil'));
+              // console.log(moment().format("HH:mm:ss") + " syncEvents AFTER - process: " + process.name + ", startBlock: " + startBlock + ", lastBlock: " + (last ? parseInt(last.blockNumber) : 'nil'));
 
               syncState.syncing = false;
               await db.syncStates.put(syncState).then (function() {
@@ -2458,10 +2504,10 @@
               });
               Vue.set(this.syncStates, syncState.contract, syncState);
             }
-            console.log(moment().format("HH:mm:ss") + " syncEventsNew END");
+            console.log(moment().format("HH:mm:ss") + " syncEvents END");
           },
 
-          async syncEvents(db, provider, latestBlockNumber) {
+          async syncEventsOld(db, provider, latestBlockNumber) {
             const CONFIRMATIONS = 100;
             let indexToAddress = [];
             const addressToIndex = {};
@@ -2507,9 +2553,9 @@
                 labelToIndex[item[1]] = index;
               }
             }
-            // console.log(moment().format("HH:mm:ss") + " syncEvents - indexToNameLabel:" + JSON.stringify(indexToNameLabel));
-            // console.log(moment().format("HH:mm:ss") + " syncEvents - nameToIndex:" + JSON.stringify(nameToIndex));
-            // console.log(moment().format("HH:mm:ss") + " syncEvents - labelToIndex:" + JSON.stringify(labelToIndex));
+            // console.log(moment().format("HH:mm:ss") + " syncEventsOld - indexToNameLabel:" + JSON.stringify(indexToNameLabel));
+            // console.log(moment().format("HH:mm:ss") + " syncEventsOld - nameToIndex:" + JSON.stringify(nameToIndex));
+            // console.log(moment().format("HH:mm:ss") + " syncEventsOld - labelToIndex:" + JSON.stringify(labelToIndex));
 
             let indexToHash = [];
             const hashToIndex = {};
@@ -2546,7 +2592,7 @@
               let newEvents = 0;
               function processLogs(fromBlock, toBlock, logs) {
                 total = parseInt(total) + logs.length;
-                console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
+                console.log(moment().format("HH:mm:ss") + " syncEventsOld " + process.name + ": " + fromBlock + " - " + toBlock + " " + logs.length + " " + total);
                 for (const event of logs) {
                   if (!event.removed) {
                     const logData = contract.interface.parseLog(event);
@@ -2562,7 +2608,7 @@
                     const eventType = logData.eventFragment.name;
                     const eventTypeIndex = t.eventTypesToIndex[eventType];
                     if (eventTypeIndex === undefined) {
-                      console.log(moment().format("HH:mm:ss") + " syncEvents - UNHANDLED eventType:" + eventType);
+                      console.log(moment().format("HH:mm:ss") + " syncEventsOld - UNHANDLED eventType:" + eventType);
                     }
                     let record = null;
 
@@ -2766,9 +2812,9 @@
                       console.log("--- UNKNOWN eventType: " + eventType + " ---");
                     }
                     if (record) {
-                      // console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
+                      // console.log(moment().format("HH:mm:ss") + " syncEventsOld " + process.name + ": " + blockNumber + "." + txIndex + " " + JSON.stringify(record));
                     } else {
-                      console.log(moment().format("HH:mm:ss") + " syncEvents " + process.name + ": " + blockNumber + "." + txIndex + " ? " + eventType);
+                      console.log(moment().format("HH:mm:ss") + " syncEventsOld " + process.name + ": " + blockNumber + "." + txIndex + " ? " + eventType);
                     }
                     if (record) {
                       const confirmations = latestBlockNumber - blockNumber;
@@ -2809,7 +2855,7 @@
                 Object.keys(events).forEach(function (key) {
                   const confirmations = storedLatestBlockNumber - key;
                   if (confirmations < CONFIRMATIONS) {
-                    console.log(moment().format("HH:mm:ss") + " syncEvents - Deleting low confirmations log events: " + key + " => " + confirmations + " " + JSON.stringify(events[key]));
+                    console.log(moment().format("HH:mm:ss") + " syncEventsOld - Deleting low confirmations log events: " + key + " => " + confirmations + " " + JSON.stringify(events[key]));
                     delete events[key];
                   }
                 });
