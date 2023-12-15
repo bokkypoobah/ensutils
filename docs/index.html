@@ -337,8 +337,11 @@
                 <div v-if="settings.tabIndex == 1" class="mt-0 pl-1">
                   <font size="-2" v-b-popover.hover.bottom="'# events'">{{ events.length + '/' + totalEvents }}</font>
                 </div>
-                <div v-if="settings.tabIndex == 2" class="mt-0 pl-1">
+                <div v-if="settings.tabIndex == 2 && totalEvents" class="mt-0 pl-1">
                   <font size="-2" v-b-popover.hover.bottom="'# events'">{{ commify0(totalEvents) }}</font>
+                </div>
+                <div v-if="settings.tabIndex == 2 && blockNumber && timestamp" class="mt-0 pl-1">
+                  <font size="-2" v-b-popover.hover.bottom="'latest block'">{{ commify0(blockNumber) + ' ' + formatTimeDiff(timestamp) }}</font>
                 </div>
                 <div v-if="settings.tabIndex == 0" class="mt-0 pl-1">
                   <b-pagination size="sm" v-model="settings.activityTable.currentPage" @input="saveSettings" :total-rows="filteredSortedActivity.length" :per-page="settings.activityTable.pageSize" style="height: 0;"></b-pagination>
