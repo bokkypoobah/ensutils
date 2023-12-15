@@ -2144,12 +2144,10 @@
           },
 
           async syncEvents(db, provider, latestBlockNumber) {
-            // TODO: DEV
-            const CONFIRMATIONS = 1000;
+            const CONFIRMATIONS = 100;
             let total = 0;
             let subTotal = 0;
             async function processLogs(t, db, process, contract, syncState, fromBlock, toBlock, logs) {
-              // const contract = new ethers.Contract(process.address, process.abi, provider);
               total = parseInt(total) + logs.length;
               subTotal = parseInt(subTotal) + logs.length;
               syncState.count += logs.length;
