@@ -1591,7 +1591,7 @@
             { value: 1, text: 'UTC Time' },
           ],
           db: {
-            name: "ensutilsdata088ftemp",
+            name: "ensutilsdata088f",
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
@@ -1614,7 +1614,7 @@
           },
           status() {
             const results = [];
-            console.log("syncStates: " + JSON.stringify(this.syncStates));
+            // console.log("syncStates: " + JSON.stringify(this.syncStates));
             let totalCount = 0;
             for (const contract of this.contracts) {
               const syncState = this.syncStates[contract.address] || {};
