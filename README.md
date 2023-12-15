@@ -14,8 +14,6 @@ Or git clone this repository and use e.g. `anywhere` from the ./docs folder.
 
 <br />
 
-<hr />
-
 ---
 
 ### Sample Screens
@@ -23,3 +21,11 @@ Or git clone this repository and use e.g. `anywhere` from the ./docs folder.
 At Dec 15 2023, there are 27.78 million logged events in the following 7 smart contracts:
 
 <kbd><img src="images/StatusScreen_20231215.png" /></kbd>
+
+<br />
+
+<br />
+
+Enjoy!
+
+(c) BokkyPooBah / Bok Consulting Pty Ltd 2023. The MIT Licence.
