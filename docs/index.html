@@ -2143,8 +2143,6 @@
             async function processLogs(t, db, process, contract, syncState, fromBlock, toBlock, logs) {
               total = parseInt(total) + logs.length;
               subTotal = parseInt(subTotal) + logs.length;
-              // TODO: counts do not add up
-              syncState.count += logs.length;
               if (!syncState.firstEventBlockNumber && logs.length > 0) {
                 syncState.firstEventBlockNumber = logs[0].blockNumber;
               }
@@ -2392,6 +2390,8 @@
 
                   // console.log("  " + blockNumber + "." + txIndex + "." + logIndex + " " + eventType + " " + eventTypeIndex + " " + JSON.stringify(event));
                   if (record) {
+                    // TODO: counts do not add up
+                    syncState.count++;
                     records.push({ blockNumber: parseInt(event.blockNumber), logIndex: parseInt(event.logIndex), txIndex: parseInt(event.transactionIndex), txHash: event.transactionHash, contract: event.address, eventType, ...record });
                     record = null;
                   }
